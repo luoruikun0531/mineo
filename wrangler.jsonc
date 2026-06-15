@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // ⚠️ name 要和你 Cloudflare 里这个 Worker 的名字一致（建项目时填的那个）。
+  "name": "mineo",
+  "main": "worker/index.ts",
+  "compatibility_date": "2025-09-01",
+
+  // 静态前端：构建产物 dist/ 作为静态资源；非 API 路由按 SPA 回退到 index.html。
+  // 前端 /api/* 请求没有对应静态文件 → 自动落到上面的 Worker（worker/index.ts）。
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+
+  // 行情缓存 KV。先在面板建一个 KV namespace，把它的 id 填到这里（替换占位符）。
+  // Storage & Databases → KV → Create namespace → 复制 Namespace ID。
+  "kv_namespaces": [
+    {
+      "binding": "QUOTES",
+      "id": "585c2a6b44484be0b137f7c3eddcd25e"
+    }
+  ],
+
+  "observability": { "enabled": true }
+
+  // TWELVE_DATA_KEY 是 Secret，不写在这里 —— 在面板
+  // Worker → Settings → Variables and Secrets → Add → 类型选 Secret。
+}

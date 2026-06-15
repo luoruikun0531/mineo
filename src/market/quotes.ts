@@ -3,7 +3,7 @@ import type { Quote } from './types';
 /**
  * 批量查行情。前端只打自家 `/api/quotes`：
  *  - dev：Vite mock 插件返回假价格（vite-plugin-quotes-mock.ts）。
- *  - prod：Cloudflare Pages Function（functions/api/quotes.ts）走 cache-aside + Twelve Data。
+ *  - prod：Cloudflare Worker（worker/index.ts）走 cache-aside + Twelve Data。
  */
 export async function fetchQuotes(symbols: string[]): Promise<Record<string, Quote>> {
   const list = [...new Set(symbols.map((s) => s.trim().toUpperCase()).filter(Boolean))];

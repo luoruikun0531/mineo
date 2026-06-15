@@ -1,15 +1,19 @@
 /**
- * Cloudflare Pages Function：GET /api/quotes?symbols=AAPL,QQQ,0700.HK
+ * Cloudflare Worker 入口（Workers 静态资源 + API 路由）。
  *
- * cache-aside over KV：
+ *  - GET /api/quotes?symbols=AAPL,QQQ → 实时行情（cache-aside over KV，见下）。
+ *  - 其它路径 → 交给静态资源（dist/）；未命中按 SPA 回退到 index.html
+ *    （由 wrangler.jsonc 的 assets.not_found_handling = single-page-application 处理）。
+ *
+ * 行情 cache-aside over KV：
  *  - 命中且新鲜（<30 分钟）→ 直接返回缓存。
- *  - 命中但过期 → 先返回旧值，后台刷新（waitUntil）。
+ *  - 命中但过期 → 先返回旧值，后台刷新（ctx.waitUntil）。
  *  - 未命中 → 同步请求 Twelve Data，写 KV 后返回。
  * 只缓存用户实际请求过的 symbol（无全市场轮询）。
  *
- * 部署需在 Cloudflare Pages 配置：
- *  - KV 绑定 QUOTES
- *  - 环境变量 TWELVE_DATA_KEY（Secret）
+ * 部署需在 Cloudflare Worker 配置：
+ *  - KV 绑定 QUOTES（在 wrangler.jsonc 填 namespace id）
+ *  - 环境变量 TWELVE_DATA_KEY（Secret，面板里加）
  */
 
 // 自包含的最小 Cloudflare 类型（运行时由 CF 提供；这里仅供本地阅读/类型）。
@@ -17,15 +21,17 @@ interface KVNamespace {
   get(key: string): Promise<string | null>;
   put(key: string, value: string): Promise<void>;
 }
+interface Fetcher {
+  fetch(request: Request): Promise<Response>;
+}
+interface ExecutionContext {
+  waitUntil(promise: Promise<unknown>): void;
+}
 interface Env {
   QUOTES: KVNamespace;
   TWELVE_DATA_KEY: string;
+  ASSETS: Fetcher;
 }
-type PagesFunction<E> = (context: {
-  request: Request;
-  env: E;
-  waitUntil(promise: Promise<unknown>): void;
-}) => Promise<Response>;
 
 interface Quote {
   symbol: string;
@@ -35,8 +41,18 @@ interface Quote {
 
 const TTL_MS = 30 * 60 * 1000; // 30 分钟
 
-export const onRequestGet: PagesFunction<Env> = async (ctx) => {
-  const url = new URL(ctx.request.url);
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname === '/api/quotes') {
+      return handleQuotes(url, env, ctx);
+    }
+    // 非 API → 静态资源（SPA 回退由 assets 配置处理）。
+    return env.ASSETS.fetch(request);
+  },
+};
+
+async function handleQuotes(url: URL, env: Env, ctx: ExecutionContext): Promise<Response> {
   const symbols = [
     ...new Set(
       (url.searchParams.get('symbols') ?? '')
@@ -52,7 +68,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
 
   await Promise.all(
     symbols.map(async (sym) => {
-      const raw = await ctx.env.QUOTES.get(`quote:${sym}`);
+      const raw = await env.QUOTES.get(`quote:${sym}`);
       if (!raw) return;
       try {
         const cached = JSON.parse(raw) as { t: number; quote: Quote };
@@ -67,10 +83,10 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   // 未命中：同步拉取 + 写缓存
   const misses = symbols.filter((s) => !(s in out));
   if (misses.length) {
-    const fresh = await fetchFromProvider(misses, ctx.env);
+    const fresh = await fetchFromProvider(misses, env);
     for (const [sym, q] of Object.entries(fresh)) {
       out[sym] = q;
-      await ctx.env.QUOTES.put(`quote:${sym}`, JSON.stringify({ t: now, quote: q }));
+      await env.QUOTES.put(`quote:${sym}`, JSON.stringify({ t: now, quote: q }));
     }
   }
 
@@ -78,10 +94,10 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   if (stale.length) {
     ctx.waitUntil(
       (async () => {
-        const fresh = await fetchFromProvider(stale, ctx.env);
+        const fresh = await fetchFromProvider(stale, env);
         const t = Date.now();
         for (const [sym, q] of Object.entries(fresh)) {
-          await ctx.env.QUOTES.put(`quote:${sym}`, JSON.stringify({ t, quote: q }));
+          await env.QUOTES.put(`quote:${sym}`, JSON.stringify({ t, quote: q }));
         }
       })(),
     );
@@ -94,7 +110,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
       'cache-control': 'no-store',
     },
   });
-};
+}
 
 /** 行情源：Twelve Data。封装在此一处，换源（Finnhub/FMP）只改这个函数。 */
 async function fetchFromProvider(symbols: string[], env: Env): Promise<Record<string, Quote>> {

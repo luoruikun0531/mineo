@@ -31,17 +31,17 @@
 
 前端只打自家 `/api/quotes?symbols=AAPL,QQQ`：
 - **dev**：`vite-plugin-quotes-mock.ts` 返回假价格（已知代码：AAPL/NVDA/TSLA/MSFT/AMZN/QQQ…；未知代码查不到 → 录入被拦截）。
-- **prod**：`functions/api/quotes.ts`（Cloudflare Pages Function）cache-aside over KV：
+- **prod**：`worker/index.ts`（Cloudflare Worker，静态资源 + `/api/quotes` 路由）cache-aside over KV：
   新鲜（<30 分钟）直返；过期返旧值 + 后台刷新；未命中同步拉 Twelve Data 写 KV。只缓存请求过的代码。
 
 `src/market/quotes.ts`：`fetchQuotes` / `lookupQuote`（录入"查价"按钮拦截无效代码）。
 `store.applyQuotes` 每 5 分钟刷新投资的 latestPrice/dayChangePct → value。
 
 ### 部署行情后端（要你做）
-在 Cloudflare Pages 项目里：
-1. **KV**：建一个 KV namespace，绑定名 **`QUOTES`**。
-2. **Secret**：环境变量 **`TWELVE_DATA_KEY`** = 你的 Twelve Data API key。
-3. Pages 会自动识别 `functions/` 并部署 `/api/quotes`。换行情源（Finnhub/FMP）只改 `fetchFromProvider`。
+本项目部署为 **Cloudflare Worker**（`wrangler.jsonc` + `worker/index.ts`：静态资源 `dist/` + `/api/quotes` 路由）。
+1. **KV**：建一个 KV namespace，把它的 id 填进 `wrangler.jsonc` 的 `kv_namespaces[].id`（绑定名 **`QUOTES`**）。
+2. **Secret**：在 Worker → Settings → Variables and Secrets 加 **`TWELVE_DATA_KEY`**（类型 Secret）= 你的 Twelve Data API key。
+3. Workers Build：Build command `npm run build`，Deploy command `npx wrangler deploy`。换行情源（Finnhub/FMP）只改 `fetchFromProvider`。
 
 ## 4. 投资动画（7 档）+ 涨跌标签（`engine/board.ts`）
 
