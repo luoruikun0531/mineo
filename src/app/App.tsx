@@ -6,7 +6,7 @@ import { AssetModal } from '@/ui/AssetModal';
 import { SettingsModal } from '@/ui/SettingsModal';
 import { applyUITokens } from '@/ui/applyTheme';
 import { LanguageProvider, useLanguage, useT } from '@/i18n';
-import { defaultTheme, getTheme, installDefaultSkins, listThemes } from '@/skins';
+import { defaultTheme, getTheme, initSkins, listThemes } from '@/skins';
 import { isWidgetMode, useGameStore } from '@/state/store';
 import { cloudEnabled } from '@/sync/cloud';
 import { WidgetSettings } from '@/widget/WidgetSettings';
@@ -17,8 +17,6 @@ import {
 } from '@/widget/prefs';
 import { displaySymbol, formatAmount } from '@/domain/currency';
 import type { Asset } from '@/domain/types';
-
-installDefaultSkins();
 
 type ModalState =
   | { type: 'none' }
@@ -194,8 +192,54 @@ function WidgetApp() {
   );
 }
 
+const loadingStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: '100vh',
+  padding: '0 24px',
+  textAlign: 'center',
+  fontFamily: 'ui-monospace, monospace',
+  color: '#7a4e25',
+};
+
+/** 皮肤就绪门控：先 await initSkins()（本地库空则自动下默认）再渲染，避免无皮肤渲染。 */
+function SkinGate({ children }: { children: React.ReactNode }) {
+  const { language } = useLanguage();
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    initSkins()
+      .then(() => {
+        if (alive) setReady(true);
+      })
+      .catch((e: unknown) => {
+        if (alive) setError(String(e));
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <div style={loadingStyle}>
+        {(language === 'zh' ? '皮肤加载失败：' : 'Skin load failed: ') + error}
+      </div>
+    );
+  }
+  if (!ready) {
+    return <div style={loadingStyle}>{language === 'zh' ? '正在准备皮肤…' : 'Preparing skins…'}</div>;
+  }
+  return <>{children}</>;
+}
+
 export function App() {
   return (
-    <LanguageProvider>{isWidgetMode() ? <WidgetApp /> : <FullApp />}</LanguageProvider>
+    <LanguageProvider>
+      <SkinGate>{isWidgetMode() ? <WidgetApp /> : <FullApp />}</SkinGate>
+    </LanguageProvider>
   );
 }

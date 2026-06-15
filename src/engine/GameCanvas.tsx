@@ -3,7 +3,7 @@ import { Application, Container } from 'pixi.js';
 import {
   defaultTheme,
   getTheme,
-  installDefaultSkins,
+  initSkins,
   preloadAssetSkins,
   type SceneHandle,
   type ThemeSkin,
@@ -11,8 +11,6 @@ import {
 import { gridNFor, useGameStore } from '@/state/store';
 import { Camera } from './camera';
 import { BoardController } from './board';
-
-installDefaultSkins();
 
 /**
  * 编排：Pixi 应用 + 相机 + 棋盘控制器。
@@ -68,7 +66,8 @@ export function GameCanvas({ onUnitTap, widget = false }: GameCanvasProps) {
       }
       host.appendChild(app.canvas);
 
-      // 预加载精灵图皮肤资源，确保后续 build() 时纹理已就绪
+      // 皮肤就绪（从本地库加载/注册）+ 预加载资产皮肤纹理，确保 build() 时已就绪
+      await initSkins();
       await preloadAssetSkins();
       if (disposed) {
         app.destroy(true);

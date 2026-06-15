@@ -1,32 +1,48 @@
-import type { AssetSkin, ThemeSkin } from './types';
+import type { Texture } from 'pixi.js';
+import { getAllPackages, type StoredPackage } from './store/db';
+import { fetchRegistry, installDefaults } from './store/download';
+import { interpretAssetSkin } from './runtime/interpretAsset';
+import { interpretThemeSkin } from './runtime/interpretTheme';
+import { loadTexture } from './runtime/texture';
 import { registerAssetSkin, registerTheme } from './registry';
+import { themeFrameNames, type AssetManifest, type ThemeManifest } from './format/manifest';
 
-/**
- * 皮肤自动发现：扫描 themes/* 与 assets/* 下每个文件夹的 index.ts，
- * 取其 default 导出（皮肤清单）注册之。
- * —— 丢进一个文件夹（含 index.ts 默认导出皮肤）即多一个皮肤，无需改任何中心文件。
- * 以 `_` 开头的文件夹（如 _template）被忽略。
- */
-export function loadAllSkins(): void {
-  const themeModules = import.meta.glob<{ default: ThemeSkin }>(
-    './themes/*/index.ts',
-    { eager: true },
-  );
-  for (const [path, mod] of Object.entries(themeModules)) {
-    if (isIgnored(path)) continue;
-    if (mod.default) registerTheme(mod.default);
+/** 把本地库里的一个包解释并注册进皮肤注册表。 */
+async function registerStored(pkg: StoredPackage): Promise<void> {
+  const urls: Record<string, string> = {};
+  for (const [name, blob] of Object.entries(pkg.blobs)) {
+    urls[name] = URL.createObjectURL(blob);
   }
 
-  const assetModules = import.meta.glob<{ default: AssetSkin }>(
-    './assets/*/index.ts',
-    { eager: true },
-  );
-  for (const [path, mod] of Object.entries(assetModules)) {
-    if (isIgnored(path)) continue;
-    if (mod.default) registerAssetSkin(mod.default);
+  if (pkg.kind === 'asset') {
+    // 资产皮肤：load() 由引擎 preloadAssetSkins 统一 await
+    registerAssetSkin(interpretAssetSkin(pkg.manifest as AssetManifest, urls));
+    return;
   }
+
+  // 主题：无 load 钩子、buildLand 同步，故先预解码纹理再 interpret
+  const manifest = pkg.manifest as ThemeManifest;
+  const tex: Record<string, Texture> = {};
+  await Promise.all(
+    themeFrameNames.map(async (name) => {
+      if (urls[name]) tex[name] = await loadTexture(urls[name], manifest.pixelated);
+    }),
+  );
+  registerTheme(interpretThemeSkin(manifest, tex));
 }
 
-function isIgnored(path: string): boolean {
-  return path.split('/').some((seg) => seg.startsWith('_'));
+/**
+ * 从本地库加载并注册所有已安装皮肤。空库则先从 Registry 装默认集。
+ * 取代旧的 import.meta.glob 程序化加载——运行时只认图片包（本地化）。
+ */
+export async function loadSkinsFromStore(): Promise<void> {
+  let packages = await getAllPackages();
+  if (packages.length === 0) {
+    const registry = await fetchRegistry();
+    await installDefaults(registry);
+    packages = await getAllPackages();
+  }
+  for (const pkg of packages) {
+    await registerStored(pkg);
+  }
 }

@@ -1,0 +1,9 @@
+{
+  "skins": [
+    { "id": "pastoral-day", "kind": "theme", "name": { "en": "Pastoral · Day", "zh": "田园 · 白昼" }, "version": "1.0.0", "base": "/skins/pastoral-day" },
+    { "id": "pastoral-dusk", "kind": "theme", "name": { "en": "Pastoral · Dusk", "zh": "田园 · 黄昏" }, "version": "1.0.0", "base": "/skins/pastoral-dusk" },
+    { "id": "orchard", "kind": "asset", "name": { "en": "Orchard", "zh": "果园" }, "version": "1.0.0", "base": "/skins/orchard" },
+    { "id": "wheat-farm", "kind": "asset", "name": { "en": "Wheat Farm", "zh": "麦田场" }, "version": "1.0.0", "base": "/skins/wheat-farm" }
+  ],
+  "defaults": ["pastoral-day", "pastoral-dusk", "orchard", "wheat-farm"]
+}
