@@ -1,0 +1,68 @@
+{
+  "format": "mineo-skin@1",
+  "kind": "asset",
+  "id": "stock-nvda",
+  "name": {
+    "en": "Nvidia",
+    "zh": "英伟达"
+  },
+  "version": "1.0.0",
+  "artGrid": 30,
+  "pixelated": true,
+  "layers": [
+    {
+      "id": "logo",
+      "behavior": "static",
+      "frames": [
+        "logo"
+      ],
+      "pos": [
+        0,
+        5
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "arrow",
+      "behavior": "quote",
+      "clips": {
+        "up3": [
+          "up3"
+        ],
+        "up2": [
+          "up2"
+        ],
+        "up1": [
+          "up1"
+        ],
+        "plain": [
+          "plain"
+        ],
+        "down1": [
+          "down1"
+        ],
+        "down2": [
+          "down2"
+        ],
+        "down3": [
+          "down3"
+        ]
+      },
+      "pos": [
+        0,
+        -10
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    }
+  ]
+}

@@ -199,7 +199,7 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
 
       <div className="field">
         <label>{t('asset.skin')}</label>
-        <SkinPicker value={iconId} onChange={setIconId} />
+        <SkinPicker value={iconId} onChange={setIconId} kind={kind} symbol={symbol} />
       </div>
 
       {kind === 'cashflow' && (

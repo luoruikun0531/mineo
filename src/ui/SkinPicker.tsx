@@ -3,14 +3,20 @@ import {
   fetchRegistry,
   installAndRegisterSkin,
   listAssetSkins,
+  skinAppliesTo,
   type RegistryEntry,
 } from '@/skins';
+import type { AssetKind } from '@/domain/types';
 import { renderSkinThumbnail } from '@/engine/skinThumbnail';
 import { useLanguage } from '@/i18n';
 
 interface SkinPickerProps {
   value: string;
   onChange: (id: string) => void;
+  /** 当前资产类别（按 scope 过滤可选皮肤）。 */
+  kind: AssetKind;
+  /** 投资代码（投资专属皮肤按代码过滤）。 */
+  symbol?: string;
 }
 
 /**
@@ -18,7 +24,7 @@ interface SkinPickerProps {
  *  - 已下载到本地：缩略图为皮肤实际渲染，可点选。
  *  - 未下载：灰显 + 右下角下载按钮；点一下下载到本地（IndexedDB）后即可选。
  */
-export function SkinPicker({ value, onChange }: SkinPickerProps) {
+export function SkinPicker({ value, onChange, kind, symbol }: SkinPickerProps) {
   const { language } = useLanguage();
   const [entries, setEntries] = useState<RegistryEntry[]>([]);
   const [installed, setInstalled] = useState<Set<string>>(
@@ -75,11 +81,22 @@ export function SkinPicker({ value, onChange }: SkinPickerProps) {
     }
   };
 
+  // 仅显示适用于当前资产（类别 + 代码）的皮肤
+  const applicable = entries.filter((e) => skinAppliesTo(e.scope, kind, symbol));
+
+  // 当前选中皮肤不适用于该资产 → 自动切到第一个适用皮肤
+  useEffect(() => {
+    if (applicable.length > 0 && !applicable.some((e) => e.id === value)) {
+      onChange(applicable[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, kind, symbol]);
+
   return (
     <div className="skin-store">
       {error && <p className="skin-store__err">{error}</p>}
       <div className="skin-picker">
-        {entries.map((entry) => {
+        {applicable.map((entry) => {
           const isInstalled = installed.has(entry.id);
           const isDownloading = downloading.has(entry.id);
           const cls =

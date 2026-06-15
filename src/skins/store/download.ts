@@ -4,8 +4,19 @@ import {
   parseThemeManifest,
   themeFrameNames,
 } from '../format/manifest';
-import type { Language } from '@/domain/types';
+import type { AssetKind, Language } from '@/domain/types';
 import { hasPackage, putPackage, type StoredPackage } from './db';
+
+/**
+ * 皮肤适用范围：决定该皮肤在哪些资产的「外观」选择里出现。
+ *  - 缺省（无 scope）：通用，所有类别可选。
+ *  - kinds：只对这些资产类别可选（如 ['cashflow']、['investment']）。
+ *  - symbols：投资专属代码皮肤（如 ['AAPL']），仅该代码的投资可选。
+ */
+export interface SkinScope {
+  kinds?: AssetKind[];
+  symbols?: string[];
+}
 
 /** Registry 中的一条皮肤记录。 */
 export interface RegistryEntry {
@@ -15,6 +26,22 @@ export interface RegistryEntry {
   version: string;
   /** 包基址：`/skins/<id>`（同源静态）或远端 URL。 */
   base: string;
+  /** 适用范围（缺省=通用）。 */
+  scope?: SkinScope;
+}
+
+/** 该皮肤是否适用于给定资产（类别 + 可选代码）。 */
+export function skinAppliesTo(
+  scope: SkinScope | undefined,
+  kind: AssetKind,
+  symbol?: string,
+): boolean {
+  if (!scope) return true;
+  if (scope.symbols && scope.symbols.length > 0) {
+    return kind === 'investment' && !!symbol && scope.symbols.includes(symbol.toUpperCase());
+  }
+  if (scope.kinds && scope.kinds.length > 0) return scope.kinds.includes(kind);
+  return true;
 }
 
 /** Registry：可用皮肤清单 + 默认集。 */

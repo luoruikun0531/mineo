@@ -1,4 +1,6 @@
+import type { Texture } from 'pixi.js';
 import { exportOrchard, exportTheme, exportWheat } from './exportProcedural';
+import { stockTextures, type StockCompany } from './stockArt';
 import {
   parseAssetManifest,
   parseThemeManifest,
@@ -146,4 +148,53 @@ export function pastoralDuskPackage(): BuiltThemePackage {
 /** 所有待落盘的老主题皮肤包。 */
 export function allBuiltThemePackages(): BuiltThemePackage[] {
   return [pastoralDayPackage(), pastoralDuskPackage()];
+}
+
+// ---- 股票占位皮肤（投资类，quote 7 档涨跌动画，scope 到各自代码）----
+
+function texToPng(tex: Texture): string {
+  return (tex.source.resource as HTMLCanvasElement).toDataURL('image/png');
+}
+
+export interface BuiltStockPackage {
+  symbol: string;
+  pkg: BuiltPackage;
+}
+
+function stockPackage(symbol: string, company: StockCompany, name: { en: string; zh: string }): BuiltPackage {
+  const tex = stockTextures(company);
+  const images: Record<string, string> = {};
+  for (const [k, t] of Object.entries(tex)) images[k] = texToPng(t);
+
+  const manifest = parseAssetManifest({
+    format: 'mineo-skin@1',
+    kind: 'asset',
+    id: `stock-${symbol.toLowerCase()}`,
+    name,
+    version: '1.0.0',
+    artGrid: 30,
+    pixelated: true,
+    layers: [
+      { id: 'logo', behavior: 'static', frames: ['logo'], pos: [0, 5], anchor: [0.5, 0.5] },
+      {
+        id: 'arrow',
+        behavior: 'quote',
+        clips: { up3: ['up3'], up2: ['up2'], up1: ['up1'], plain: ['plain'], down1: ['down1'], down2: ['down2'], down3: ['down3'] },
+        pos: [0, -10],
+        anchor: [0.5, 0.5],
+      },
+    ],
+  });
+  return { id: `stock-${symbol.toLowerCase()}`, manifest, images };
+}
+
+/** 5 个示例股票占位皮肤（带代码，供 registry 按代码 scope）。 */
+export function allStockPackages(): BuiltStockPackage[] {
+  return [
+    { symbol: 'AAPL', pkg: stockPackage('AAPL', 'apple', { en: 'Apple', zh: '苹果' }) },
+    { symbol: 'NVDA', pkg: stockPackage('NVDA', 'nvidia', { en: 'Nvidia', zh: '英伟达' }) },
+    { symbol: 'TSLA', pkg: stockPackage('TSLA', 'tesla', { en: 'Tesla', zh: '特斯拉' }) },
+    { symbol: 'MSFT', pkg: stockPackage('MSFT', 'microsoft', { en: 'Microsoft', zh: '微软' }) },
+    { symbol: 'AMZN', pkg: stockPackage('AMZN', 'amazon', { en: 'Amazon', zh: '亚马逊' }) },
+  ];
 }
