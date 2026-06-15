@@ -457,6 +457,24 @@ button:active.hud-btn,
   text-align: center;
 }
 
+/* 桌面挂件下载 */
+.widget-dl {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
+
+.widget-steps {
+  margin: 14px 0 0;
+  padding-left: 22px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.widget-steps li {
+  margin-bottom: 4px;
+}
+
 /* ---- 弹窗 ---- */
 .modal-overlay {
   position: absolute;

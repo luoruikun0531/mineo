@@ -4,6 +4,7 @@ import { TopBar } from '@/ui/TopBar';
 import { ThemeSwitcher } from '@/ui/ThemeSwitcher';
 import { AssetModal } from '@/ui/AssetModal';
 import { SettingsModal } from '@/ui/SettingsModal';
+import { WidgetDownloadModal } from '@/ui/WidgetDownloadModal';
 import { applyUITokens } from '@/ui/applyTheme';
 import { LanguageProvider, useLanguage, useT } from '@/i18n';
 import { defaultTheme, ensureSkinsInstalled, getTheme, initSkins, listThemes } from '@/skins';
@@ -24,7 +25,8 @@ import type { Asset } from '@/domain/types';
 type ModalState =
   | { type: 'none' }
   | { type: 'asset'; editing: Asset | null }
-  | { type: 'settings' };
+  | { type: 'settings' }
+  | { type: 'widget' };
 
 /** 主题色 token 应用（full 与 widget 共用） */
 function useThemeTokens(themeId: string) {
@@ -122,12 +124,16 @@ function FullApp() {
   return (
     <div className="app">
       <GameCanvas onUnitTap={onUnitTap} />
-      <TopBar onSettings={() => setModal({ type: 'settings' })} />
+      <TopBar
+        onSettings={() => setModal({ type: 'settings' })}
+        onWidget={() => setModal({ type: 'widget' })}
+      />
       <ThemeSwitcher activeThemeId={themeId} onChange={setThemeId} />
       <AddBar onAdd={() => setModal({ type: 'asset', editing: null })} />
       <OfflineToast />
       {modal.type === 'asset' && <AssetModal editing={modal.editing} onClose={close} />}
       {modal.type === 'settings' && <SettingsModal onClose={close} />}
+      {modal.type === 'widget' && <WidgetDownloadModal onClose={close} />}
     </div>
   );
 }

@@ -12,9 +12,10 @@ import { useNow } from './useNow';
  */
 interface TopBarProps {
   onSettings: () => void;
+  onWidget: () => void;
 }
 
-export function TopBar({ onSettings }: TopBarProps) {
+export function TopBar({ onSettings, onWidget }: TopBarProps) {
   const t = useT();
   const { language, setLanguage } = useLanguage();
   const assets = useGameStore((s) => s.assets);
@@ -43,6 +44,9 @@ export function TopBar({ onSettings }: TopBarProps) {
         </div>
         <span className="harvest-stat__value">{pct}%</span>
       </div>
+      <button className="hud-btn" type="button" onClick={onWidget}>
+        💻 {t('widget.get')}
+      </button>
       <button className="hud-btn" type="button" onClick={onSettings}>
         ⚙ {t('hud.settings')}
       </button>
