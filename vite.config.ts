@@ -4,9 +4,11 @@ import { fileURLToPath, URL } from 'node:url';
 import { skinExportPlugin } from './vite-plugin-skin-export';
 import { quotesMockPlugin } from './vite-plugin-quotes-mock';
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), skinExportPlugin(), quotesMockPlugin()],
+  plugins: [react(), skinExportPlugin(), quotesMockPlugin(), cloudflare()],
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {
