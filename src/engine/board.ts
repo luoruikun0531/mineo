@@ -26,7 +26,10 @@ interface Unit {
   handle: AssetSkinHandle;
   /** 实际构建用的皮肤 id（皮肤未就绪时可能是占位回退 wheat-farm）。 */
   skinId: string;
+  /** 名字铭牌（脚下，所有资产都有）。 */
   label: Container;
+  /** 投资：当日涨跌标签（头顶上下跳）；非投资为 null。 */
+  changeLabel: Container | null;
   x: number;
   y: number;
   tx: number;
@@ -188,7 +191,7 @@ export class BoardController {
           unit.hs = initHarvest(r);
           unit.lastBand = null;
         }
-        if (asset.kind !== 'investment' && unit.asset.name !== asset.name) {
+        if (unit.asset.name !== asset.name) {
           const tile = this.theme?.tileSize ?? 104;
           const lbl = this.makeNameplate(asset.name, tile);
           lbl.position.set(unit.label.x, unit.label.y);
@@ -236,13 +239,17 @@ export class BoardController {
     handle.view.cursor = 'pointer';
     handle.view.on('pointertap', () => this.onUnitTap(asset.id));
 
-    // 投资类：标签显示当日涨跌幅（绿涨/红跌，头顶上下跳）；其余显示资产名
-    const label =
-      asset.kind === 'investment'
-        ? this.makeChangeLabel(asset.dayChangePct, tile)
-        : this.makeNameplate(asset.name, tile);
+    // 所有资产都显示名字铭牌（脚下）；投资额外在头顶加一个上下跳的当日涨跌标签
+    const label = this.makeNameplate(asset.name, tile);
     label.alpha = 0;
     this.labelLayer.addChild(label);
+
+    let changeLabel: Container | null = null;
+    if (asset.kind === 'investment') {
+      changeLabel = this.makeChangeLabel(asset.dayChangePct, tile);
+      changeLabel.alpha = 0;
+      this.labelLayer.addChild(changeLabel);
+    }
 
     return {
       id: asset.id,
@@ -250,6 +257,7 @@ export class BoardController {
       handle,
       skinId: skin.id,
       label,
+      changeLabel,
       x: 0,
       y: 0,
       tx: 0,
@@ -267,6 +275,7 @@ export class BoardController {
   private disposeUnit(unit: Unit): void {
     unit.handle.destroy?.();
     unit.label.destroy({ children: true });
+    unit.changeLabel?.destroy({ children: true });
   }
 
   /** 资产名铭牌：深色像素底牌 + 文字，放在格子内小人脚下。 */
@@ -320,16 +329,17 @@ export class BoardController {
       v.position.set(unit.x, unit.y);
       if (v.alpha < 1) v.alpha = Math.min(1, v.alpha + dt * FADE_SPEED);
       const tile = this.theme?.tileSize ?? 104;
-      if (unit.asset.kind === 'investment') {
-        // 盈亏标签：头顶上下跳动（跟"爆金币"同款律动，但持续循环）
+      // 名牌：脚下（所有资产都显示名字）
+      unit.label.position.set(unit.x, unit.y + tile * 0.32);
+      unit.label.alpha = v.alpha;
+      // 投资：当日涨跌标签头顶上下跳（跟"爆金币"同款律动，但持续循环）
+      if (unit.changeLabel) {
         unit.bobT += dt;
         const ph = unit.bobT * 4 + unit.bobPhase;
-        unit.label.position.set(unit.x, unit.y - tile * 0.4 + Math.sin(ph) * tile * 0.05);
-        unit.label.scale.set(1 + Math.sin(ph) * 0.05);
-      } else {
-        unit.label.position.set(unit.x, unit.y + tile * 0.32);
+        unit.changeLabel.position.set(unit.x, unit.y - tile * 0.42 + Math.sin(ph) * tile * 0.05);
+        unit.changeLabel.scale.set(1 + Math.sin(ph) * 0.05);
+        unit.changeLabel.alpha = v.alpha;
       }
-      unit.label.alpha = v.alpha;
     }
 
     this.tickFloats(dt);
@@ -361,7 +371,7 @@ export class BoardController {
 
   /** 投资：按当日涨跌设价格状态（驱动皮肤 7 档）+ 更新盈亏金额标签（仅变化时）。 */
   private tickQuote(unit: Unit): void {
-    if (unit.asset.kind !== 'investment') return;
+    if (unit.asset.kind !== 'investment' || !unit.changeLabel) return;
     const state = priceStateForChange(unit.asset.dayChangePct);
     if (state !== unit.lastPriceState) {
       unit.handle.setPriceState?.(state);
@@ -371,11 +381,11 @@ export class BoardController {
     if (text !== unit.lastChangeText) {
       const tile = this.theme?.tileSize ?? 104;
       const lbl = this.makeChangeLabel(unit.asset.dayChangePct, tile);
-      lbl.position.set(unit.label.x, unit.label.y);
-      lbl.alpha = unit.label.alpha;
+      lbl.position.set(unit.changeLabel.x, unit.changeLabel.y);
+      lbl.alpha = unit.changeLabel.alpha;
       this.labelLayer.addChild(lbl);
-      unit.label.destroy({ children: true });
-      unit.label = lbl;
+      unit.changeLabel.destroy({ children: true });
+      unit.changeLabel = lbl;
       unit.lastChangeText = text;
     }
   }
