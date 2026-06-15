@@ -1,10 +1,15 @@
 import type { Texture } from 'pixi.js';
 import { getAllPackages, type StoredPackage } from './store/db';
-import { fetchRegistry, installDefaults } from './store/download';
+import {
+  fetchRegistry,
+  installDefaults,
+  installPackage,
+  type RegistryEntry,
+} from './store/download';
 import { interpretAssetSkin } from './runtime/interpretAsset';
 import { interpretThemeSkin } from './runtime/interpretTheme';
 import { loadTexture } from './runtime/texture';
-import { registerAssetSkin, registerTheme } from './registry';
+import { preloadAssetSkins, registerAssetSkin, registerTheme } from './registry';
 import { themeFrameNames, type AssetManifest, type ThemeManifest } from './format/manifest';
 
 /** 把本地库里的一个包解释并注册进皮肤注册表。 */
@@ -45,4 +50,14 @@ export async function loadSkinsFromStore(): Promise<void> {
   for (const pkg of packages) {
     await registerStored(pkg);
   }
+}
+
+/**
+ * 按需下载并注册一个皮肤（供「皮肤商店」的下载按钮用）：
+ * 下载 → 入库 → 解释注册；资产皮肤顺带预加载纹理，使其立即可用/可缩略图。
+ */
+export async function installAndRegisterSkin(entry: RegistryEntry): Promise<void> {
+  const pkg = await installPackage(entry);
+  await registerStored(pkg);
+  if (pkg.kind === 'asset') await preloadAssetSkins();
 }

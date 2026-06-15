@@ -12,5 +12,7 @@ export function initSkins(): Promise<void> {
   return initPromise;
 }
 
+export { installAndRegisterSkin } from './loader';
+export { fetchRegistry, type Registry, type RegistryEntry } from './store/download';
 export * from './types';
 export * from './registry';
