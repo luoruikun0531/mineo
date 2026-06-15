@@ -30,7 +30,7 @@ export function pixelFarmLandSceneSize(grid: GridSpec): {
   };
 }
 
-interface LandTextures {
+export interface LandTextures {
   soilLight: Texture;
   soilDark: Texture;
   fence: Texture;
@@ -41,7 +41,8 @@ interface LandTextures {
 }
 const cache = new Map<LandPalette, LandTextures>();
 
-function landTextures(p: LandPalette): LandTextures {
+/** 由色板生成田园土地所需的全部像素贴图。构建期可单独导出成 PNG。 */
+export function pixelFarmLandTextures(p: LandPalette): LandTextures {
   const hit = cache.get(p);
   if (hit) return hit;
 
@@ -108,7 +109,7 @@ export function buildPixelFarmLand(grid: GridSpec, p: LandPalette): SceneHandle 
   const { width, height } = pixelFarmLandSceneSize(grid);
   const plotX = MARGIN_X;
   const plotY = MARGIN_TOP;
-  const tex = landTextures(p);
+  const tex = pixelFarmLandTextures(p);
 
   const view = new Container();
   view.label = 'pixelFarmLand';

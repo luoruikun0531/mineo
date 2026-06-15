@@ -5,6 +5,10 @@ import {
   buildLazyFrames,
   buildSackTexture,
   buildWheatFrames,
+  pixelFarmLandTextures,
+  pixelSkyTextures,
+  type LandPalette,
+  type SkyPalette,
 } from '../kit';
 import { buildCrateTexture, buildFruitTreeFrames, buildGrassTexture } from '../assets/orchard/sprites';
 
@@ -60,6 +64,26 @@ export function exportOrchard(): Record<string, string> {
   });
 
   return out;
+}
+
+/** 主题（土地 + 天空）：导出固定命名的贴图（土壤/篱笆/树/池塘/花/云/鸟）。 */
+export function exportTheme(palette: LandPalette, sky: SkyPalette): Record<string, string> {
+  const land = pixelFarmLandTextures(palette);
+  const skyTex = pixelSkyTextures(sky);
+  return {
+    soil_light: pngOf(land.soilLight),
+    soil_dark: pngOf(land.soilDark),
+    fence: pngOf(land.fence),
+    tree_0: pngOf(land.tree[0]),
+    tree_1: pngOf(land.tree[1]),
+    pond_0: pngOf(land.pond[0]),
+    pond_1: pngOf(land.pond[1]),
+    flower_0: pngOf(land.flower[0]),
+    flower_1: pngOf(land.flower[1]),
+    cloud: pngOf(land.cloud),
+    sky_cloud: pngOf(skyTex.cloud),
+    bird: pngOf(skyTex.bird),
+  };
 }
 
 /** wheat-farm（麦田场）：耕地 + 一排麦子 + 锄地工 + 偷懒者 + 粮袋。 */

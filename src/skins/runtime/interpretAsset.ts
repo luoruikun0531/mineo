@@ -3,6 +3,7 @@ import type { AssetEvent, AssetSkin, AssetSkinHandle } from '../types';
 import { bob, breathe, harvestPop, killMotion, sway } from '../kit/motion';
 import { makeProgressBar } from '../kit/progressBar';
 import { assetFrameNames, type AssetManifest, type LayerManifest } from '../format/manifest';
+import { loadTexture } from './texture';
 
 /**
  * 图片皮肤解释器：把一个皮肤包（manifest + 图片源）解释成引擎认识的 AssetSkin。
@@ -31,23 +32,6 @@ export function interpretAssetSkin(
     },
     build: ({ tileSize }) => buildComposite(manifest, textures, tileSize),
   };
-}
-
-/**
- * 通用纹理加载：用 <img> + decode，兼容 data URL / blob: URL / 普通路径
- * （Pixi 的 Assets.load 靠扩展名识别类型，对无扩展名的 data/blob URL 会失败）。
- */
-async function loadTexture(src: string, pixelated: boolean): Promise<Texture> {
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = () => reject(new Error(`skin image failed to load: ${src.slice(0, 48)}`));
-    img.src = src;
-  });
-  const tex = Texture.from(img);
-  tex.source.scaleMode = pixelated ? 'nearest' : 'linear';
-  return tex;
 }
 
 const WORKER_HARVEST = 'harvest';

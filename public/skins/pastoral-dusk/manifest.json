@@ -1,0 +1,34 @@
+{
+  "format": "mineo-skin@1",
+  "kind": "theme",
+  "id": "pastoral-dusk",
+  "name": {
+    "en": "Pastoral · Dusk",
+    "zh": "田园 · 黄昏"
+  },
+  "version": "1.0.0",
+  "tileSize": 104,
+  "canvasBackground": "#e89a73",
+  "pixelated": true,
+  "land": {
+    "ground": "#9aa073",
+    "groundShade": "#6f7a4f",
+    "path": "#b98c63"
+  },
+  "sky": {
+    "skyTop": "#ffd9a0",
+    "skyBottom": "#e89a73",
+    "sun": "#ffd59a",
+    "hill": "#8f9d6b",
+    "hillDark": "#77885a"
+  },
+  "ui": {
+    "skyTop": "#ffd9a0",
+    "skyBottom": "#e89a73",
+    "panel": "#a96a3f",
+    "panelBorder": "#5e3620",
+    "highlight": "#ffe9cf",
+    "ink": "#3a271b",
+    "harvestText": "#ff9a3c"
+  }
+}

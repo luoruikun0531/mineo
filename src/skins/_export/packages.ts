@@ -1,5 +1,11 @@
-import { exportOrchard, exportWheat } from './exportProcedural';
-import { parseAssetManifest, type AssetManifest } from '../format/manifest';
+import { exportOrchard, exportTheme, exportWheat } from './exportProcedural';
+import {
+  parseAssetManifest,
+  parseThemeManifest,
+  type AssetManifest,
+  type ThemeManifest,
+} from '../format/manifest';
+import type { LandPalette, SkyPalette } from '../kit';
 
 /**
  * 把老的程序化皮肤定义成图片皮肤包（manifest + 导出的 PNG）。
@@ -72,7 +78,72 @@ export function wheatPackage(): BuiltPackage {
   return { id: 'wheat-farm', manifest, images };
 }
 
-/** 所有待落盘的老资产皮肤包（主题由 themePackages 单独处理）。 */
+/** 所有待落盘的老资产皮肤包（主题由 allBuiltThemePackages 单独处理）。 */
 export function allBuiltPackages(): BuiltPackage[] {
   return [orchardPackage(), wheatPackage()];
+}
+
+// ---- 主题（土地 + 天空）皮肤包 ----
+
+const hexStr = (n: number): string => '#' + n.toString(16).padStart(6, '0');
+
+export interface BuiltThemePackage {
+  id: string;
+  manifest: ThemeManifest;
+  images: Record<string, string>;
+}
+
+const dayPalette: LandPalette = {
+  grass: 0xa8c66c, grassDark: 0x8fb85a, ground: 0xb6d07a, groundShade: 0x88a64f, path: 0xc9a06b,
+  plotLight: 0xb98a5a, plotDark: 0x9e7144, furrow: 0x7a5532, fence: 0xe6c79a, fenceShade: 0xa9824f,
+  trunk: 0x8a5a34, leaf: 0x6fae4f, leafDark: 0x568a3c, flowerA: 0xff9ec2, flowerB: 0xffd24a,
+  flowerCore: 0xfff2c0, water: 0x6fc6d6, waterLight: 0xa7e4ee, cloud: 0xfff6e6, sunGlow: 0xfff1b8,
+};
+const daySky: SkyPalette = {
+  skyTop: 0xffe9b8, skyBottom: 0xffd28a, cloud: dayPalette.cloud, sun: dayPalette.sunGlow,
+  hill: dayPalette.grass, hillDark: dayPalette.grassDark,
+};
+
+/** 田园·白昼。 */
+export function pastoralDayPackage(): BuiltThemePackage {
+  const images = exportTheme(dayPalette, daySky);
+  const manifest = parseThemeManifest({
+    format: 'mineo-skin@1', kind: 'theme', id: 'pastoral-day',
+    name: { en: 'Pastoral · Day', zh: '田园 · 白昼' }, version: '1.0.0',
+    tileSize: 104, canvasBackground: '#ffd28a', pixelated: true,
+    land: { ground: hexStr(dayPalette.ground), groundShade: hexStr(dayPalette.groundShade), path: hexStr(dayPalette.path) },
+    sky: { skyTop: hexStr(daySky.skyTop), skyBottom: hexStr(daySky.skyBottom), sun: hexStr(daySky.sun), hill: hexStr(daySky.hill), hillDark: hexStr(daySky.hillDark) },
+    ui: { skyTop: '#ffe9b8', skyBottom: '#ffd28a', panel: '#c98a4b', panelBorder: '#7a4e25', highlight: '#fff6d8', ink: '#4a3526', harvestText: '#ffb300' },
+  });
+  return { id: 'pastoral-day', manifest, images };
+}
+
+const duskPalette: LandPalette = {
+  grass: 0x8f9d6b, grassDark: 0x77885a, ground: 0x9aa073, groundShade: 0x6f7a4f, path: 0xb98c63,
+  plotLight: 0xa07650, plotDark: 0x82603d, furrow: 0x5e4128, fence: 0xd9b48a, fenceShade: 0x916a44,
+  trunk: 0x6f4a2c, leaf: 0x5f8a52, leafDark: 0x466239, flowerA: 0xe487b4, flowerB: 0xf2b35e,
+  flowerCore: 0xffe7bd, water: 0x5f93c2, waterLight: 0x93bfe0, cloud: 0xf3d9bf, sunGlow: 0xffd59a,
+};
+const duskSky: SkyPalette = {
+  skyTop: 0xffd9a0, skyBottom: 0xe89a73, cloud: duskPalette.cloud, sun: duskPalette.sunGlow,
+  hill: duskPalette.grass, hillDark: duskPalette.grassDark,
+};
+
+/** 田园·黄昏。 */
+export function pastoralDuskPackage(): BuiltThemePackage {
+  const images = exportTheme(duskPalette, duskSky);
+  const manifest = parseThemeManifest({
+    format: 'mineo-skin@1', kind: 'theme', id: 'pastoral-dusk',
+    name: { en: 'Pastoral · Dusk', zh: '田园 · 黄昏' }, version: '1.0.0',
+    tileSize: 104, canvasBackground: '#e89a73', pixelated: true,
+    land: { ground: hexStr(duskPalette.ground), groundShade: hexStr(duskPalette.groundShade), path: hexStr(duskPalette.path) },
+    sky: { skyTop: hexStr(duskSky.skyTop), skyBottom: hexStr(duskSky.skyBottom), sun: hexStr(duskSky.sun), hill: hexStr(duskSky.hill), hillDark: hexStr(duskSky.hillDark) },
+    ui: { skyTop: '#ffd9a0', skyBottom: '#e89a73', panel: '#a96a3f', panelBorder: '#5e3620', highlight: '#ffe9cf', ink: '#3a271b', harvestText: '#ff9a3c' },
+  });
+  return { id: 'pastoral-dusk', manifest, images };
+}
+
+/** 所有待落盘的老主题皮肤包。 */
+export function allBuiltThemePackages(): BuiltThemePackage[] {
+  return [pastoralDayPackage(), pastoralDuskPackage()];
 }

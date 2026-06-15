@@ -89,3 +89,60 @@ export function assetFrameNames(manifest: AssetManifest): string[] {
   }
   return [...set];
 }
+
+// ---- 主题（土地 + 天空 + UI）皮肤包 ----
+
+const Hex = z.string(); // '#rrggbb'
+const ThemeUISchema = z.object({
+  skyTop: Hex,
+  skyBottom: Hex,
+  panel: Hex,
+  panelBorder: Hex,
+  highlight: Hex,
+  ink: Hex,
+  harvestText: Hex,
+  fontFamily: z.string().optional(),
+});
+
+/**
+ * 主题皮肤包清单。
+ * 土地/天空的"贴图"（土壤/篱笆/树/池塘/花/云/鸟）来自包内固定命名的 PNG（见 themeFrameNames）；
+ * 大面积纯色填充（草地/泥径/天空渐变/太阳/远山）来自这里的 hex 颜色。布局是引擎通用逻辑。
+ */
+export const ThemeManifestSchema = z.object({
+  format: z.literal('mineo-skin@1'),
+  kind: z.literal('theme'),
+  id: z.string(),
+  name: Localized,
+  version: z.string(),
+  tileSize: z.number().positive(),
+  canvasBackground: Hex,
+  pixelated: z.boolean().default(true),
+  /** 土地纯色填充。 */
+  land: z.object({ ground: Hex, groundShade: Hex, path: Hex }),
+  /** 天空纯色填充。 */
+  sky: z.object({ skyTop: Hex, skyBottom: Hex, sun: Hex, hill: Hex, hillDark: Hex }),
+  /** HUD 主题色 token。 */
+  ui: ThemeUISchema,
+});
+export type ThemeManifest = z.infer<typeof ThemeManifestSchema>;
+
+/** 主题包内固定命名的贴图（加载器据此取 PNG）。 */
+export const themeFrameNames = [
+  'soil_light',
+  'soil_dark',
+  'fence',
+  'tree_0',
+  'tree_1',
+  'pond_0',
+  'pond_1',
+  'flower_0',
+  'flower_1',
+  'cloud',
+  'sky_cloud',
+  'bird',
+] as const;
+
+export function parseThemeManifest(data: unknown): ThemeManifest {
+  return ThemeManifestSchema.parse(data);
+}
