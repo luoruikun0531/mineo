@@ -6,8 +6,10 @@ import { formatHarvest } from '@/domain/currency';
 import {
   assetEventForProgress,
   getAssetSkin,
+  priceStateForChange,
   type AssetEvent,
   type AssetSkinHandle,
+  type PriceState,
   type SceneHandle,
   type ThemeSkin,
 } from '@/skins';
@@ -30,6 +32,14 @@ interface Unit {
   placed: boolean;
   hs: HarvestState;
   lastBand: AssetEvent | null;
+  /** 投资：上次价格状态 + 涨跌标签文本（仅变化时切动画/重建标签）。 */
+  lastPriceState: PriceState | null;
+  lastPctText: string;
+}
+
+/** 当日涨跌幅 → 标签文本（如 "+11.0%"）。 */
+function pctText(pct: number): string {
+  return `${pct >= 0 ? '+' : ''}${(pct * 100).toFixed(1)}%`;
 }
 
 interface FloatText {
@@ -202,13 +212,19 @@ export class BoardController {
     const handle = skin.build({ tileSize: tile });
     handle.view.alpha = 0;
     this.unitsLayer.addChild(handle.view);
+    // 投资类：隐藏进度条/收成，改走涨跌动画
+    if (asset.kind === 'investment') handle.setQuoteMode?.(true);
 
     // 点击单位 → 查看/编辑（主程序只收到 id）
     handle.view.eventMode = 'static';
     handle.view.cursor = 'pointer';
     handle.view.on('pointertap', () => this.onUnitTap(asset.id));
 
-    const label = this.makeNameplate(asset.name, tile);
+    // 投资类：标签显示当日涨跌幅（绿/红）；其余显示资产名
+    const label =
+      asset.kind === 'investment'
+        ? this.makePriceBadge(asset.dayChangePct, tile)
+        : this.makeNameplate(asset.name, tile);
     label.alpha = 0;
     this.labelLayer.addChild(label);
 
@@ -224,6 +240,8 @@ export class BoardController {
       placed: false,
       hs: initHarvest(this.rateFor(asset)),
       lastBand: null,
+      lastPriceState: null,
+      lastPctText: asset.kind === 'investment' ? pctText(asset.dayChangePct) : '',
     };
   }
 
@@ -271,14 +289,17 @@ export class BoardController {
     const mk = Math.min(1, dt * MOVE_SMOOTH);
     for (const unit of this.units.values()) {
       unit.handle.update?.(dt);
-      this.tickHarvest(unit, dt);
+      if (unit.asset.kind === 'investment') {
+        this.tickQuote(unit);
+      } else {
+        this.tickHarvest(unit, dt);
+        unit.handle.setProgress?.(progress(unit.hs)); // 进度条（皮肤画，引擎喂值）
+      }
       unit.x += (unit.tx - unit.x) * mk;
       unit.y += (unit.ty - unit.y) * mk;
       const v = unit.handle.view;
       v.position.set(unit.x, unit.y);
       if (v.alpha < 1) v.alpha = Math.min(1, v.alpha + dt * FADE_SPEED);
-      // 进度条（皮肤画，引擎喂值）+ 资产名标签（引擎画）
-      unit.handle.setProgress?.(progress(unit.hs));
       const tile = this.theme?.tileSize ?? 104;
       unit.label.position.set(unit.x, unit.y + tile * 0.32);
       unit.label.alpha = v.alpha;
@@ -309,6 +330,51 @@ export class BoardController {
       unit.handle.onEvent?.(band, phaseSec);
       unit.lastBand = band;
     }
+  }
+
+  /** 投资：按当日涨跌设价格状态（驱动股票皮肤 7 档）+ 更新涨跌标签（仅变化时）。 */
+  private tickQuote(unit: Unit): void {
+    if (unit.asset.kind !== 'investment') return;
+    const pct = unit.asset.dayChangePct;
+    const state = priceStateForChange(pct);
+    if (state !== unit.lastPriceState) {
+      unit.handle.setPriceState?.(state);
+      unit.lastPriceState = state;
+    }
+    const text = pctText(pct);
+    if (text !== unit.lastPctText) {
+      const tile = this.theme?.tileSize ?? 104;
+      const badge = this.makePriceBadge(pct, tile);
+      badge.position.set(unit.label.x, unit.label.y);
+      badge.alpha = unit.label.alpha;
+      this.labelLayer.addChild(badge);
+      unit.label.destroy({ children: true });
+      unit.label = badge;
+      unit.lastPctText = text;
+    }
+  }
+
+  /** 涨跌标签：绿(涨)/红(跌)/中性 底牌 + 百分比文字。 */
+  private makePriceBadge(pct: number, tile: number): Container {
+    const color = pct > 0.001 ? 0x2e9e4f : pct < -0.001 ? 0xd0402f : 0x6b6256;
+    const style: TextStyleOptions = {
+      fontFamily: "'Press Start 2P', ui-monospace, monospace",
+      fontSize: Math.max(8, Math.round(tile * 0.1)),
+      fill: 0xffffff,
+      align: 'center',
+    };
+    const t = new Text({ text: pctText(pct), style });
+    t.anchor.set(0.5);
+    const padX = Math.round(tile * 0.08);
+    const padY = Math.round(tile * 0.05);
+    const bw = t.width + padX * 2;
+    const bh = t.height + padY * 2;
+    const bg = new Graphics();
+    bg.roundRect(-bw / 2, -bh / 2, bw, bh, Math.max(2, Math.round(tile * 0.03)))
+      .fill({ color, alpha: 0.92 });
+    const c = new Container();
+    c.addChild(bg, t);
+    return c;
   }
 
   private spawnFloat(unit: Unit, amount: number): void {

@@ -1,5 +1,5 @@
 import { AnimatedSprite, Container, Sprite, Texture } from 'pixi.js';
-import type { AssetEvent, AssetSkin, AssetSkinHandle } from '../types';
+import type { AssetEvent, AssetSkin, AssetSkinHandle, PriceState } from '../types';
 import { bob, breathe, harvestPop, killMotion, sway } from '../kit/motion';
 import { makeProgressBar } from '../kit/progressBar';
 import { assetFrameNames, type AssetManifest, type LayerManifest } from '../format/manifest';
@@ -110,6 +110,21 @@ function buildComposite(
   return {
     view,
     setProgress: (p) => bar?.set(p),
+    setQuoteMode: (on: boolean) => {
+      if (bar) bar.view.visible = !on; // 投资类隐藏进度条
+    },
+    setPriceState: (state: PriceState) => {
+      for (const { m, sprite } of layers) {
+        if (m.behavior !== 'quote') continue;
+        const frames = clipFrames(m, textures, state);
+        if (frames.length === 0) continue;
+        if (sprite instanceof AnimatedSprite) {
+          switchClip(sprite, frames, (m.fps ?? 4) / 60, true);
+        } else {
+          sprite.texture = frames[0];
+        }
+      }
+    },
     onEvent: (event: AssetEvent, ph?: number) => {
       if (event === 'harvest') {
         for (const { m, sprite } of layers) {
@@ -185,6 +200,10 @@ function initialFrames(m: LayerManifest, textures: Record<string, Texture>): Tex
   if (m.behavior === 'idler') {
     const sit = clipFrames(m, textures, IDLER_SIT);
     if (sit.length) return sit;
+  }
+  if (m.behavior === 'quote') {
+    const plain = clipFrames(m, textures, 'plain');
+    if (plain.length) return plain;
   }
   if (m.frames?.length) return mapFrames(m.frames, textures);
   if (m.clips) {

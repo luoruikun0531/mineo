@@ -19,8 +19,9 @@ const Localized = z.object({ en: z.string(), zh: z.string() });
  *  - plant   作物/树：默认有环境动作，harvest 弹跳。
  *  - worker  工人：循环 idle 片段，工作档位越高播得越快；harvest 播一次 'harvest' 片段再回 idle。
  *  - idler   偷懒者：低档位播 'sit'，到 workAt 档位切 'work'。
+ *  - quote   投资：按当日涨跌 7 档切片段（clips 的键用 up3/up2/up1/plain/down1/down2/down3）。
  */
-export const LayerBehavior = z.enum(['static', 'plant', 'worker', 'idler']);
+export const LayerBehavior = z.enum(['static', 'plant', 'worker', 'idler', 'quote']);
 export type LayerBehavior = z.infer<typeof LayerBehavior>;
 
 /** 环境动作：叠加在（通常是静态）层上的循环动效。 */

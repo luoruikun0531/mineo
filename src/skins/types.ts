@@ -83,6 +83,22 @@ export function assetEventForProgress(progress: number): AssetEvent {
 }
 
 /**
+ * 投资价格状态：当日涨跌幅 → 7 档（驱动股票皮肤动画）。
+ * 阈值：+10% / +5% / +1% / ±1%(plain) / -5% / -10%。
+ */
+export type PriceState = 'up3' | 'up2' | 'up1' | 'plain' | 'down1' | 'down2' | 'down3';
+
+export function priceStateForChange(pct: number): PriceState {
+  if (pct >= 0.1) return 'up3';
+  if (pct >= 0.05) return 'up2';
+  if (pct >= 0.01) return 'up1';
+  if (pct > -0.01) return 'plain';
+  if (pct > -0.05) return 'down1';
+  if (pct > -0.1) return 'down2';
+  return 'down3';
+}
+
+/**
  * 资产皮肤实例。架构铁律：
  * - 主程序只通过 onEvent 发抽象事件、通过 update 转发时钟；只知道"现在什么状态"。
  * - 素材是什么、怎么编排、是否用 GSAP、是像素还是日漫——全部封装在皮肤包内部，主程序不感知。
@@ -94,6 +110,10 @@ export interface AssetSkinHandle extends SceneHandle {
   onEvent?: (event: AssetEvent, phaseSec?: number) => void;
   /** 引擎每帧告知当前收成进度 0..1；皮肤据此更新自己的进度条（进度条是皮肤的一部分）。 */
   setProgress?: (progress: number) => void;
+  /** 投资模式：隐藏进度条/收成（价格驱动，非产出）。引擎对投资类资产调用 setQuoteMode(true)。 */
+  setQuoteMode?: (on: boolean) => void;
+  /** 投资：当日涨跌状态（7 档），驱动股票皮肤动画。 */
+  setPriceState?: (state: PriceState) => void;
 }
 
 /**
