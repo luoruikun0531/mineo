@@ -2,8 +2,8 @@ import type { Texture } from 'pixi.js';
 import { getAllPackages, type StoredPackage } from './store/db';
 import {
   fetchRegistry,
-  installDefaults,
   installPackage,
+  syncWithRegistry,
   type RegistryEntry,
 } from './store/download';
 import { interpretAssetSkin } from './runtime/interpretAsset';
@@ -48,10 +48,13 @@ async function registerStored(pkg: StoredPackage): Promise<void> {
  */
 export async function loadSkinsFromStore(): Promise<void> {
   let packages = await getAllPackages();
-  if (packages.length === 0) {
+  // 每次启动与 Registry 对齐：补齐新增的默认皮肤 + 升级版本变化的皮肤（离线则用本地已有）。
+  try {
     const registry = await fetchRegistry();
-    await installDefaults(registry);
-    packages = await getAllPackages();
+    const changed = await syncWithRegistry(registry, packages);
+    if (changed.length > 0) packages = await getAllPackages();
+  } catch {
+    /* 离线：用本地已有的皮肤 */
   }
   for (const pkg of packages) {
     await registerStored(pkg);

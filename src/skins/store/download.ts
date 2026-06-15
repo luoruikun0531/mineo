@@ -5,7 +5,7 @@ import {
   themeFrameNames,
 } from '../format/manifest';
 import type { AssetKind, Language } from '@/domain/types';
-import { hasPackage, putPackage, type StoredPackage } from './db';
+import { putPackage, type StoredPackage } from './db';
 
 /**
  * 皮肤适用范围：决定该皮肤在哪些资产的「外观」选择里出现。
@@ -80,7 +80,7 @@ export async function downloadPackage(entry: RegistryEntry): Promise<StoredPacka
         blobs[n] = await fetchBlob(`${base}/${n}.png`);
       }),
     );
-    return { id: entry.id, kind: 'asset', version: manifest.version, manifest, blobs };
+    return { id: entry.id, kind: 'asset', version: entry.version, manifest, blobs };
   }
 
   const manifest = parseThemeManifest(raw);
@@ -89,7 +89,7 @@ export async function downloadPackage(entry: RegistryEntry): Promise<StoredPacka
       blobs[n] = await fetchBlob(`${base}/${n}.png`);
     }),
   );
-  return { id: entry.id, kind: 'theme', version: manifest.version, manifest, blobs };
+  return { id: entry.id, kind: 'theme', version: entry.version, manifest, blobs };
 }
 
 /** 安装（下载 + 入库）。 */
@@ -99,20 +99,30 @@ export async function installPackage(entry: RegistryEntry): Promise<StoredPackag
   return pkg;
 }
 
-/** 确保给定 id 都已在本地库；缺的从 registry 下载安装。返回新装的 id 列表。 */
-export async function ensureInstalled(ids: string[], registry: Registry): Promise<string[]> {
-  const installed: string[] = [];
+/**
+ * 与 Registry 对齐本地库（每次启动调用）：
+ *  - 补齐缺失的默认皮肤（包括「新增」的默认，如后加的银行/别墅/办公室/工厂）；
+ *  - 升级版本已变化的「已安装」皮肤（含非默认，如代码专属股票皮肤升版）。
+ * `stored` 传入已读出的本地包（拿版本，免重复读库）。离线时各步吞错，不阻塞启动。
+ * 返回有变化（新装/升级）的 id 列表。
+ */
+export async function syncWithRegistry(
+  registry: Registry,
+  stored: StoredPackage[],
+): Promise<string[]> {
+  const installedVersion = new Map(stored.map((p) => [p.id, p.version]));
+  const ids = new Set<string>([...registry.defaults, ...installedVersion.keys()]);
+  const changed: string[] = [];
   for (const id of ids) {
-    if (await hasPackage(id)) continue;
     const entry = registry.skins.find((s) => s.id === id);
     if (!entry) continue;
-    await installPackage(entry);
-    installed.push(id);
+    if (installedVersion.get(id) === entry.version) continue; // 已是最新
+    try {
+      await installPackage(entry); // 缺装 / 升级（putPackage 覆盖）
+      changed.push(id);
+    } catch {
+      /* 离线/缺失：跳过该皮肤，不阻塞其它 */
+    }
   }
-  return installed;
-}
-
-/** 本地库为空时装默认集（registry.defaults）。 */
-export async function installDefaults(registry: Registry): Promise<string[]> {
-  return ensureInstalled(registry.defaults, registry);
+  return changed;
 }

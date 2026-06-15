@@ -16,7 +16,9 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   const settings = useGameStore((s) => s.settings);
   const updateSettings = useGameStore((s) => s.updateSettings);
   const syncCode = useGameStore((s) => s.syncCode);
+  const resetAll = useGameStore((s) => s.resetAll);
   const [copied, setCopied] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const copyCode = () => {
     try {
@@ -123,6 +125,33 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
           <p className="hint">{t('sync.hint')}</p>
         </div>
       )}
+
+      <div className="field">
+        <label>{t('settings.reset')}</label>
+        {confirmReset ? (
+          <p className="reset-row">
+            <button type="button" className="btn" onClick={() => setConfirmReset(false)}>
+              {t('common.cancel')}
+            </button>{' '}
+            <button
+              type="button"
+              className="btn btn--danger"
+              onClick={() => {
+                resetAll();
+                setConfirmReset(false);
+                onClose();
+              }}
+            >
+              {t('settings.resetConfirm')}
+            </button>
+          </p>
+        ) : (
+          <button type="button" className="btn btn--danger" onClick={() => setConfirmReset(true)}>
+            {t('settings.reset')}
+          </button>
+        )}
+        <p className="hint">{t('settings.resetHint')}</p>
+      </div>
     </Modal>
   );
 }

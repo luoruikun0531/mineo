@@ -41,6 +41,8 @@ interface GameStore {
   addAsset: (input: AssetInput) => void;
   updateAsset: (id: string, input: AssetInput) => void;
   removeAsset: (id: string) => void;
+  /** 重置：清空所有资产与价值历史（保留货币/目标等设置与主题）。 */
+  resetAll: () => void;
   updateSettings: (patch: Partial<Settings>) => void;
   /** 投资资产：套用行情刷新（latestPrice/dayChangePct → value）。 */
   applyQuotes: (quotes: Record<string, Quote>) => void;
@@ -129,6 +131,7 @@ export const useGameStore = create<GameStore>((set) => ({
       ),
     })),
   removeAsset: (id) => set((s) => ({ assets: s.assets.filter((a) => a.id !== id) })),
+  resetAll: () => set({ assets: [], valueSnapshots: [], offlineGain: 0 }),
   updateSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
   applyQuotes: (quotes) =>
     set((s) => ({
