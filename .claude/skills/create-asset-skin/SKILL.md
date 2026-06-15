@@ -1,178 +1,117 @@
 ---
 name: create-asset-skin
-description: How to author a new Mineo ASSET skin (a "production mini-world" unit that sits on the map and animates). Use when adding/designing a new asset appearance for the Mineo project — e.g. a farm, orchard, mine, workshop, fishery. Covers the isolated-folder plugin structure, the AssetSkin contract, the kit SDK, animation/layering conventions, and a checklist.
+description: How to author a new Mineo ASSET skin (a "production mini-world" unit that sits on the map and animates). Asset skins are now IMAGE PACKAGES — manifest.json + PNG sprites (ideally AI-generated), rendered by a built-in interpreter (no code). Use when adding/designing a new asset appearance for Mineo — e.g. a farm, orchard, mine, workshop, fishery. Covers the package format, the manifest schema, layer behaviors, motion recipes, the AI-image workflow, the registry/local-store model, and a checklist.
 ---
 
-# 创建一个资产皮肤（Asset Skin）
+# 创建一个资产皮肤（Asset Skin · 图片包）
 
-Mineo 的资产是一个**会生产的小世界**：场地 + 产物 + 多个有行为的角色（建议留一个偷懒的）+ 道具 + 特效。**细节就是产品**——默认可糙，但必须分层、可继续做细。
+Mineo 的资产是一个**会生产的小世界**：场地 + 产物 + 多个有行为的角色（建议留一个偷懒的）+ 道具。
 
-## 0. 黄金法则：皮肤即插件，完全隔离
+> **皮肤现在是「图片包」，不是代码。** 一个皮肤 = `manifest.json`（声明布局 + 行为）+ 一组 PNG 贴图（**最好用 AI 生成**）。一个内置的**解释器**（`src/skins/runtime/interpretAsset.ts`）把包渲染成会动的单位——**作者不写任何渲染代码**。动效（摇摆/浮动/呼吸/丰收弹跳、分档提速、丰收编排）由解释器程序化施加,所以 **AI 只需要出"静图"**。
 
-- **一个文件夹 = 一个皮肤**，放进 `src/skins/assets/<your-id>/` 即被自动发现注册（`src/skins/loader.ts` 用 `import.meta.glob` 扫描，无需改任何中心文件）。
-- 皮肤文件夹**只可** `import` 平台契约 `../../types` 与平台 SDK `../../kit`；**绝不可** import 其它皮肤文件夹。皮肤之间零耦合。
-- 皮肤与**资产类型无关**：现金流/投资只决定录入项与收益算法，**不**决定外观。同一皮肤可用于任意类型。
-- **主程序边界（铁律）**：主程序只通过三条通道跟你沟通——`onEvent(event, phaseSec)`（抽象事件）、`update(dt)`（时钟）、`setProgress(p)`（当前收成进度 0..1）；只知道"现在什么状态"。**素材、编排、是否用 GSAP、像素还是日漫，全封装在皮肤内部，主程序与 GSAP 互不感知**。引擎只负责：把 `view` 摆到地图上 + 中性过渡（位置/alpha）、在单位上方画 `+X` 飘字、在下方画资产名铭牌——这些你都不用管，view 内部由你全权决定。
+## 0. 黄金法则
 
-## 1. 起步：复制模板
+- **一个皮肤 = `public/skins/<id>/` 一个文件夹**：`manifest.json` + 若干 `*.png`。
+- 在 `public/skins/registry.json` 加一条记录,皮肤即可被「皮肤商店」按需下载到用户本地（IndexedDB）。运行时只从本地库读、解释、渲染。
+- 皮肤与**资产类型无关**：现金流/投资只决定录入项与收益算法,**不**决定外观。
+- **主程序边界（铁律没变）**：引擎只发抽象事件 `working1/2/3` + `harvest`、喂收成进度 `0..1`、给时钟;素材与编排全在包内的数据里。引擎负责落位、入场淡入、相机缩放、画 `+X` 飘字与资产名铭牌——你都不用管。
+
+## 1. 包结构
 
 ```
-cp -r src/skins/assets/_template src/skins/assets/<your-id>
-```
-- 文件夹名建议 = 皮肤 `id`（小写连字符，如 `wheat-farm`、`mine`）。
-- `_` 开头的文件夹会被加载器忽略（模板因此不会被注册）。
-
-## 2. 必需内容
-
-文件夹至少包含 `index.ts`，**默认导出**一个 `AssetSkin`：
-
-```ts
-import { Container, Graphics } from 'pixi.js';
-import type { AssetSkin, AssetSkinHandle } from '../../types';
-import { makeCharacter, makeProgressBar } from '../../kit';
-
-const mine: AssetSkin = {
-  id: 'mine',                       // 唯一，建议同文件夹名
-  name: { en: 'Mine', zh: '矿井' }, // 必须含 en 与 zh
-  build: ({ tileSize }): AssetSkinHandle => {
-    const s = tileSize / 104;       // 以 104 为基准缩放
-    const view = new Container();
-    // ...绘制场景（见 §3 §4）...
-
-    // 头顶进度条（成熟度）—— 皮肤的一部分
-    const bar = makeProgressBar(tileSize * 0.6);
-    bar.view.position.set(0, -tileSize * 0.42);
-    view.addChild(bar.view);
-
-    let elapsed = 0;
-    return {
-      view,
-      setProgress: (p) => bar.set(p),          // 引擎每帧喂进度 0..1
-      update: (dt) => { elapsed += dt; /* 推进常驻动画 */ },
-      onEvent: (event, phaseSec) => {
-        // working1/2/3：4 段工作强度（用 phaseSec 自适应节奏）；harvest：丰收一次
-        if (event === 'harvest') { /* 闪光/欢呼/产物弹出 */ }
-        else { /* 切到 working1/2/3 对应的忙碌程度 */ }
-      },
-      destroy: () => view.destroy({ children: true }),
-    };
-  },
-};
-export default mine;
+public/skins/<id>/
+  manifest.json        # 声明：分层、行为、动作、事件编排、进度条
+  grass.png            # 各帧 PNG（帧名 = 文件名去掉 .png）
+  tree0_0.png  tree0_1.png
+  picker0_idle_0.png ... picker0_harvest_0.png ...
+  ...
 ```
 
-把私有部件拆到同文件夹的其它文件（如 `parts.ts`、`crops.ts`），保持 `index.ts` 清爽。
+`manifest.json` 的 schema 见 `src/skins/format/manifest.ts`（`AssetManifestSchema`）。最小骨架:
 
-## 3. `build({ tileSize })` 约定
+```jsonc
+{
+  "format": "mineo-skin@1",
+  "kind": "asset",
+  "id": "mine",
+  "name": { "en": "Mine", "zh": "矿井" },
+  "version": "1.0.0",
+  "artGrid": 46,            // 每个 tile = 多少逻辑像素（与图素分辨率一致，颗粒统一）
+  "pixelated": true,        // 像素风=最近邻;AI 平滑/写实美术设 false
+  "layers": [ /* 见 §2 */ ],
+  "progressBar": { "pos": [0, -0.44], "width": 0.6 }  // pos=tile 占比, width=tile 占比
+}
+```
 
-- **坐标系**：以 `(0,0)` 为**格子中心**绘制，整体大致落在 `[-tileSize/2, tileSize/2]`。引擎会把单位放到格子中心。
-- **不要**自己处理位置/入场/资产名——引擎（`engine/board.ts`）负责落位、随格子重排、入场淡入、随相机缩放，并在单位下方画资产名铭牌、上方弹 `+X`。
-- 返回 `AssetSkinHandle`：
-  - `view: Container`（必需）
-  - `update(dt)`：每帧推进常驻动画（dt 秒，已限幅）
-  - `setProgress(p)`：引擎每帧告知当前收成进度 0..1 —— 用来更新头顶进度条（见 §4）
-  - `onEvent(event, phaseSec)`：主程序发抽象事件（见下表），`phaseSec`=该阶段动态时长
-  - `destroy()`：清理（`view.destroy({ children: true })`）
+## 2. 层（layers）—— 作者只需「给图 + 选 behavior」
 
-### 4 个抽象事件（引擎按收成进度发）
+每层引用一张或几张 PNG,选一个 `behavior`,解释器据此响应 4 个事件:
 
-| 事件 | 触发 | 皮肤该做什么 |
+| behavior | 含义 | 典型 |
 |---|---|---|
-| `working1` | 进度 < 25% | 轻松开工 |
-| `working2` | 进度 < 50% | 忙起来 |
-| `working3` | 进度 < 75%（含到满前） | 冲刺、最忙（可让偷懒的也起来干） |
-| `harvest` | 进度满 | 丰收一次：欢呼 + 产物弹/闪 |
+| `static` | 纯展示;可加环境动作;可选 `popOnHarvest` | 草地、果筐 |
+| `plant`  | 作物/树:环境动作 + 丰收弹跳 | 果树、麦子 |
+| `worker` | 工人:循环 `idle` 片段,工作档位越高播得越快;丰收播一次 `harvest` 片段再回 `idle` | 采摘工、锄地工 |
+| `idler`  | 偷懒者:低档位播 `sit`,到 `workAt` 档位切 `work`——**强烈建议留一个,这是"小世界"的灵魂** | 偷懒的 |
 
-`phaseSec` = 这一阶段会持续多少秒（随收成周期动态变化）。**动态时长铁律**：周期快就把动画演得快、慢就慢，**别写死时长**。常见做法：用 `phaseSec` 反比缩放动画速度（参考 `wheat-farm`/`orchard` 里的 `spd()`）。
+层字段:
+```jsonc
+{ "id": "tree0", "behavior": "plant",
+  "frames": ["tree0_0", "tree0_1"],   // 简单循环帧（单帧=静图）。与 clips 二选一
+  "pos": [-13, 5],                     // artGrid 单位, (0,0)=单位中心
+  "anchor": [0.5, 1],                  // 默认 [0.5,1] 底部居中
+  "fps": 1.2,
+  "motion": "none",                    // none|sway|bob|breathe（叠加循环动效）
+  "popOnHarvest": true }
 
-## 4. 设计：让它像个"活的小世界"
+{ "id": "picker0", "behavior": "worker",
+  "clips": { "idle": ["picker0_idle_0","picker0_idle_1"],   // 命名片段
+             "harvest": ["picker0_harvest_0","picker0_harvest_1"] },
+  "pos": [-9, 13], "fps": 4 }
 
-分层（从下到上）：**场地 → 产物 → 角色 → 道具 → 特效**。
-
-- **多个角色、各有行为**：用 kit 的 `makeCharacter({ kind })`：
-  - `'hoe'` 干活（锄/采/挖，手臂挥动）
-  - `'walk'` 来回搬运（左右走、自动转向、腿交替）
-  - `'lazy'` 偷懒（下沉后仰、冒 `z`）——**强烈建议至少放一个**，这是"小世界"的灵魂。
-  - 可选 `scale`、`shirt`(颜色)、`phase`(错峰)、`walkRange`。
-- **错峰**：给每个角色/产物不同 `phase`，避免整齐划一的机械感。
-- **产物**：自带会摆动、丰收会弹/闪的部件（参考 `wheat-farm/crops.ts`、`orchard/fruit-tree.ts`）。
-- **留做细空间**：角色已分层 身体/手臂/工具/表情；可继续加帧、加随机动作（擦汗、打哈欠）、加道具。
-- **进度条是皮肤的一部分**：用 kit 的 `makeProgressBar(width)` 放在头顶（如 `bar.view.position.set(0, -tileSize*0.42)`），并在返回的 `setProgress(p)` 里 `bar.set(p)`。
-
-## 5. kit（平台 SDK）能用什么
-
-`import { ... } from '../../kit'`：
-- **精灵图（推荐美术路径，见 §5b）**：`loadSpriteSheet(jsonUrl)`、`makeSpriteUnit(states, opts)`、`makeDebugFrames()`。
-- **像素绘制（见 §5d）**：`makePixelTexture(w,h,draw)`（逻辑像素画布 → 最近邻 Texture）、`cssHex(0xRRGGBB)`。
-- **田园像素部件**：`buildFarmerStates(shirt)`（农民 idle/harvest 帧）、`buildLazyFrames(shirt)`、`buildWheatFrames()`、`buildGroundTexture()`、`buildSackTexture()` —— 直接拼一个像素农场/果园（`wheat-farm`/`orchard` 即用这些）。
-- **进度条**：`makeProgressBar(width) → { view, set(p) }`（头顶成熟度条）。
-- **运动 / 补间（GSAP，见 §5c）**：`harvestPop(view)`、`breathe/sway/bob(target)`、`killMotion(view)`、`gsap`。
-- `makeCharacter(opts) → { view, update(t), celebrate() }`：通用程序化小人骨架（矢量风时用）。注意它的 `update(t)` 吃**绝对累计时间**；在你的 `update(dt)` 里维护 `elapsed += dt` 再传入。
-- 土地相关（`buildPixelFarmLand/buildFarmLand/makeTree/...`）：主要给土地皮肤用（见 create-land-skin SKILL）。
-
-> 两种实现方式都合法、同一接口：**精灵图皮肤（推荐）** 或 **程序化皮肤**（当前 wheat-farm/orchard）。
-
-## 5b. 用精灵图做皮肤（推荐：最像素、最易做细）
-
-管线：Aseprite/TexturePacker 画帧 → 导出 `sheet.png` + `sheet.json` → 放进本皮肤文件夹 → kit 加载。
-
-1. 在 Aseprite 用 **frame tags** 给动画分组命名（如 `idle`、`work`、`harvest`），File → Export Sprite Sheet（勾选 JSON Data、Array、按 tag 分）。导出的 `sheet.json` 的 `meta.frameTags` 会变成 Pixi `Spritesheet.animations` 的键。
-2. 把 `sheet.png` + `sheet.json` 放进 `src/skins/assets/<id>/`。
-3. 皮肤清单用**异步 `load()` 预加载**（引擎会在首次 build 前 await 它），`build()` 保持同步：
-
-```ts
-import type { AssetSkin } from '../../types';
-import { loadSpriteSheet, makeSpriteUnit, type StateFrames } from '../../kit';
-
-let frames: StateFrames | null = null;
-const skin: AssetSkin = {
-  id: 'fishery', name: { en: 'Fishery', zh: '渔场' },
-  load: async () => { frames = await loadSpriteSheet(new URL('./sheet.json', import.meta.url).href); },
-  build: ({ tileSize }) => makeSpriteUnit(frames!, { tileSize, fit: 0.72, fps: 8 }),
-};
-export default skin;
+{ "id": "lazy", "behavior": "idler",
+  "clips": { "sit": ["lazy_sit_0","lazy_sit_1"], "work": ["lazy_work_0","lazy_work_1"] },
+  "pos": [15, 13], "fps": 1.5, "workAt": 3 }
 ```
 
-- `makeSpriteUnit` 默认循环播 `idle`；`setState('work')` 切常驻状态；`onEvent('harvest')` 播一次 `harvest` 再回 `idle`，并叠加 GSAP 弹跳。
-- 像素清晰：kit 已设最近邻缩放。`fit` 控制单位占格子比例，`fps` 控制帧率。
-- 没有美术想先打通管线？用 `makeDebugFrames()` 生成占位帧。
-- 一个"生产小世界"可以是**一张大场景精灵图**，也可以多个 `makeSpriteUnit` 拼（多角色各一张表）。
+## 3. 动作由引擎加 —— AI 只出静图
 
-## 5d. 程序化像素（无外部素材时的「像素标准」）
+- **环境动作**：`motion: "sway"|"bob"|"breathe"` 把静图做成摇摆/上下浮/呼吸。一张树的静图 + `sway` = 会摆的树,**不必逐帧**。
+- **丰收弹跳**：`popOnHarvest: true`,丰收时该层 squash&stretch 弹一下。
+- **分档提速**：`worker` 层随 working1<2<3 自动加快。
+- **逐帧动画（可选）**：真想要逐帧（出了 sprite sheet）就给 `frames`/`clips` 多帧;否则一张静图 + 动作配方足矣。
 
-没有 Aseprite 素材、又要像素风时，用 kit 的 `makePixelTexture(w, h, draw)`：在【逻辑像素尺寸】的小画布上 `fillRect` 作画（1px = 1 像素块），返回最近邻 Texture，再放大显示 → 真像素。
+> AI 最不擅长逐帧一致性。所以主力做法是 **AI 出好看的静图 + 选 behavior/motion**。
 
-**参考皮肤：`assets/wheat-farm/`、`assets/orchard/`**（都用 kit 的田园像素部件 `buildFarmerStates`/`buildWheatFrames`/… 搭成）。约定：
-- 同一皮肤所有元素都按「每格 tile = `ART_GRID` 个逻辑像素」作画，统一用 `unit = tileSize/ART_GRID` 缩放 → 全场景共享一套像素网格，颗粒一致。
-- 多元素用 `Sprite`（静态）+ `AnimatedSprite`（角色/作物多帧）合成；丰收时切 cheer 帧 + `harvestPop`。
-- 角色/产物的逻辑尺寸固定（如农民 14×18），以后用 Aseprite 按相同逻辑尺寸导出 → 无缝替换。
+## 4. AI 图片素材工作流（推荐）
 
-> 风格是皮肤的事：像素皮肤=低分辨率 nearest 素材，平滑/日漫皮肤=高清素材，引擎一视同仁。
-> 想全局像素？不要加全局滤镜（会压死非像素皮肤）——把各皮肤做成像素皮肤即可。
+1. 用图片生成 API（如 **fal.ai** / Midjourney / SD）出 PNG:**透明底**,像素风或写实皆可。
+   - 每个元素一张静图（一棵树、一个工人 idle、一个工人 harvest、一个筐）。
+   - 要逐帧就出几帧一组（一个 clip）。
+2. 把 PNG 丢进 `public/skins/<id>/`,文件名即帧名。
+3. 照着 `public/skins/orchard/manifest.json` 写 `manifest.json`,调位置/behavior。
+4. 在 `public/skins/registry.json` 的 `skins` 加一条;要做默认皮肤再加进 `defaults`。
+5. `npm run dev` → 右下「＋添加资产」→「外观」里你的皮肤会出现;未装的点下载按钮装到本地 → 选中 → 看效果。
 
-## 5c. 用 GSAP 做运动（点缀/丰收）
+**对齐技巧**：AI 出图不会像素级对齐,用每层的 `anchor`/`pos`/（必要时缩放）微调。任意分辨率都行,解释器按 `artGrid` 缩放到 tile;像素风设 `pixelated:true`(最近邻),平滑美术设 `false`(线性)。
 
-`kit/motion.ts` 用 GSAP 提供声明式补间，替代手写 sin/lerp：
-- `harvestPop(view)`：丰收 squash&stretch 弹跳（`makeSpriteUnit` 已内置调用）。
-- `breathe/sway/bob(target, amp, { duration, delay })`：循环呼吸/摇摆/浮动，返回 tween；`destroy` 时 `killMotion(view)` 清理。
-- **铁律**：不要对**同一属性**既用 GSAP 补间、又在 `update(dt)` 里逐帧赋值——会打架。精灵图皮肤天然没有逐帧赋值，最适合 GSAP。
+## 5. 坐标与进度条
 
-## 6. 自测
+- `pos`：artGrid 逻辑像素单位,`(0,0)` = 单位中心,`anchor` 默认底部居中。
+- `progressBar.pos`：tile 占比（如 `[0,-0.44]` 在头顶上方）;`width`：tile 占比（如 `0.6`）。引擎每帧喂进度,解释器自动填充——你只声明位置/宽度。
 
-1. `npm run typecheck` 必须过。
-2. 跑起来：`npm run dev`（或用现有预览），点右下 **＋添加资产** → 在「外观」选择器里选你的皮肤（自动列出所有已注册皮肤的缩略图）→ 添加，确认出现在格子里、动画流畅、扩张/缩放正常。
-3. 金额给大一点，让收成 ~1~3 秒一次，方便观察四个阶段与丰收。
-4. 确认：进度条随收成爬升、working1/2/3 节奏随之变化、满了丰收（欢呼 + `+X`）。点单位可编辑/删除。
+## 6. 老皮肤是范例（也是如何把程序化转 PNG 的来源）
+
+- `public/skins/orchard/`：多层范例（草地 + 3 棵果树 + 2 采摘工 + 偷懒者 + 2 果筐 + 进度条）。
+- `public/skins/wheat-farm/`：耕地 + 一排麦子 + 锄地工 + 偷懒者 + 粮袋。
+- 这两个是从早期"程序化皮肤"用 `src/skins/_export/`（dev 期渲染贴图 → PNG）导出的。**新 AI 皮肤跳过这步**——本来就是 PNG。导出器与范例 manifest 见 `src/skins/_export/packages.ts`。
 
 ## 7. 检查清单
 
-- [ ] 文件夹放在 `src/skins/assets/<id>/`，`index.ts` 默认导出 `AssetSkin`
-- [ ] `id` 唯一；`name` 含 `en` 与 `zh`
-- [ ] 以 (0,0) 为中心绘制，整体不超出 `tileSize` 太多
-- [ ] 实现 4 个事件 `working1/2/3` + `harvest`，并用 `phaseSec` 做**动态时长**（不写死）
-- [ ] 头顶有进度条（`makeProgressBar` + 返回 `setProgress`）
-- [ ] `destroy` 清理（含 `killMotion`/GSAP 与子节点）
-- [ ] 只 import `../../types` 与 `../../kit`，无跨皮肤 import
-- [ ] 至少 2 个角色 + 建议 1 个偷懒的；各有 `phase`
-- [ ] `typecheck` 通过、浏览器实测动画 OK
-```
+- [ ] `public/skins/<id>/` 含 `manifest.json` + 全部 PNG（帧名 = 文件名）
+- [ ] manifest 过 Zod 校验（照 orchard 的形状写;`parseAssetManifest` 不报错）
+- [ ] `public/skins/registry.json` 加了该皮肤记录
+- [ ] 至少 1 个 `idler`(偷懒的);`worker` 层有 `idle` + `harvest` 片段
+- [ ] 有 `progressBar`
+- [ ] `npm run dev`：皮肤出现在「外观」商店,可下载、可选、动画正常（4 段 + 丰收弹跳）
+- [ ] `npm run typecheck` 与 `npm run build` 通过

@@ -1,111 +1,86 @@
 ---
 name: create-land-skin
-description: How to author a new Mineo LAND+UI theme skin (the animated ground/scenery plus the HUD color tokens, swapped via the main-screen palette button). Use when adding/designing a new map theme for the Mineo project — e.g. a dusk variant, a snowy field, a neon city. Covers the isolated-folder plugin structure, the ThemeSkin contract, the kit land builder, dynamic-grid/camera rules, and a checklist.
+description: How to author a new Mineo LAND+UI theme skin (the ground/scenery plus HUD color tokens, swapped via the main-screen palette button). Themes are now IMAGE PACKAGES — manifest.json (a few flat colors + UI tokens) + a fixed set of named PNG tiles/sprites (ideally AI-generated). A built-in interpreter lays them out (dynamic grid, fences, decor, drifting clouds). Use when adding/designing a new map theme for Mineo — e.g. a dusk variant, snowy field, neon city. Covers the package format, manifest fields, the 12 fixed image names, the AI-image workflow, and a checklist.
 ---
 
-# 创建一个土地+UI 皮肤（Theme Skin）
+# 创建一个土地+UI 主题（Theme Skin · 图片包）
 
-土地皮肤同时决定**地图场景**（会动的土地/装饰）与**HUD 外观**（一组 UI 颜色 token）。用户在主界面左下 🎨 按钮切换/替换。
+主题同时决定**地图场景**（会动的土地 + 全屏天空背景）与 **HUD 外观**（一组 UI 颜色 token）。用户在主界面左下 🎨 切换。
 
-## 0. 黄金法则：皮肤即插件，完全隔离
+> **主题现在也是「图片包」。** 一个主题 = `manifest.json`（少量纯色 + UI token）+ 一组**固定命名的 PNG**（土壤/篱笆/树/池塘/花/云/鸟,**最好 AI 生成**）。内置解释器（`src/skins/runtime/interpretTheme.ts`）按通用布局把它们铺成土地+天空——**动态格子、篱笆、装饰摆位、云朵漂移全由解释器负责,作者不碰布局**。
 
-- **一个文件夹 = 一个皮肤**，放进 `src/skins/themes/<your-id>/` 即被自动发现注册（`src/skins/loader.ts`，无需改中心文件）。
-- 只可 `import` `../../types` 与 `../../kit`；**绝不**跨皮肤 import。
-- `_` 开头的文件夹被加载器忽略（如 `_template`）。
+## 0. 黄金法则
 
-## 1. 起步：复制模板
+- **一个主题 = `public/skins/<id>/` 一个文件夹**：`manifest.json` + 固定命名的 PNG。
+- 在 `public/skins/registry.json` 加一条 `kind:"theme"` 记录,即可被下载到本地。
+- 范例:`public/skins/pastoral-day/`、`public/skins/pastoral-dusk/`（直接照抄改图改色）。
 
+## 1. 包内必须的 12 张 PNG（固定命名）
+
+解释器按这些**固定帧名**取图（见 `src/skins/format/manifest.ts` 的 `themeFrameNames`）:
+
+| 文件 | 是什么 | 参考逻辑尺寸 |
+|---|---|---|
+| `soil_light.png` / `soil_dark.png` | 耕地棋盘两色土壤块（平铺） | 16×16 |
+| `fence.png` | 篱笆立柱 | 6×16 |
+| `tree_0.png` / `tree_1.png` | 装饰树 2 帧（轻摆） | 24×30 |
+| `pond_0.png` / `pond_1.png` | 池塘 2 帧（波光） | 30×16 |
+| `flower_0.png` / `flower_1.png` | 两种小花 | 7×11 |
+| `cloud.png` | 土地层飘云 | 24×10 |
+| `sky_cloud.png` | 天空背景云 | 28×11 |
+| `bird.png` | 远飞小鸟 | 7×4 |
+
+> 像素风按上面的小逻辑尺寸出图（解释器最近邻放大）;平滑/写实风可出更高分辨率,manifest 里设 `pixelated:false`。
+
+## 2. manifest.json（纯色 + UI token）
+
+大面积纯色填充（草地、泥径、天空渐变、太阳、远山）来自这里的 hex 颜色;有纹理的部分来自上面的 PNG。schema 见 `ThemeManifestSchema`。
+
+```jsonc
+{
+  "format": "mineo-skin@1",
+  "kind": "theme",
+  "id": "snowy",
+  "name": { "en": "Snowy", "zh": "雪原" },
+  "version": "1.0.0",
+  "tileSize": 104,                 // 单格世界像素
+  "canvasBackground": "#cfe6f2",   // 画布兜底色（被全屏背景覆盖时基本不可见）
+  "pixelated": true,               // 像素风=最近邻;平滑美术设 false
+  "land": { "ground": "#dfeaf0", "groundShade": "#b9cdd8", "path": "#cdb79a" },
+  "sky":  { "skyTop": "#eef7fc", "skyBottom": "#cfe6f2", "sun": "#fff1b8",
+            "hill": "#dfeaf0", "hillDark": "#b9cdd8" },
+  "ui":   { "skyTop": "#eef7fc", "skyBottom": "#cfe6f2", "panel": "#6f8aa6",
+            "panelBorder": "#3c5066", "highlight": "#ffffff", "ink": "#2b3a47",
+            "harvestText": "#4aa3ff" }
+}
 ```
-cp -r src/skins/themes/_template src/skins/themes/<your-id>
-```
-文件夹名建议 = 皮肤 `id`（如 `pastoral-day`、`snowy`）。
 
-## 2. 必需内容
+- `land`/`sky` 的颜色驱动:地基草地、泥径、天空分段渐变、像素太阳、远山。
+- `ui`：HUD 颜色 token,写入 `:root` CSS 变量（见 `src/ui/applyTheme.ts`）。切主题时土地与 HUD **一起**变——务必协调。
 
-`index.ts` **默认导出**一个 `ThemeSkin`：
+## 3. AI 图片素材工作流
 
-```ts
-import type { ThemeSkin } from '../../types';
-import {
-  buildPixelFarmLand,
-  buildPixelSkyBackdrop,
-  type LandPalette,
-} from '../../kit';
+1. 用图片生成 API（fal.ai / MJ / SD）出上面 12 张 PNG:**透明底**,统一风格。
+   - 土壤两色（亮/暗）要能**无缝平铺**;树/池塘出 2 帧做轻微动效。
+2. 丢进 `public/skins/<id>/`,文件名**严格用上表的固定名**。
+3. 照 `public/skins/pastoral-day/manifest.json` 写 manifest,改 `land`/`sky`/`ui` 配色 + tileSize。
+4. 在 `public/skins/registry.json` 的 `skins` 加 `kind:"theme"` 一条;要做默认就加进 `defaults`。
+5. `npm run dev` → 点左下 🎨 选你的主题（未装会自动下载到本地）→ 看土地/天空/HUD 同步切换。
 
-const palette: LandPalette = { /* 20 个颜色，见 _template / kit/landParts.ts */ };
+## 4. 布局是解释器的事（你不用管）
 
-const snowy: ThemeSkin = {
-  id: 'snowy',                          // 唯一，建议同文件夹名
-  name: { en: 'Snowy', zh: '雪原' },    // 必须含 en 与 zh
-  tileSize: 104,                        // 单格世界像素（越大越能容纳资产细节）
-  canvasBackground: 0xcfe6f2,           // 画布兜底色（被全屏背景覆盖时基本不可见）
-  buildLand: (grid) => buildPixelFarmLand(grid, palette), // 像素土地（buildFarmLand=矢量版）
-  buildBackdrop: (w, h) =>              // 全屏皮肤背景：让"整个页面都是皮肤"（见 §4b）
-    buildPixelSkyBackdrop(w, h, {
-      skyTop: 0xe8f4fb, skyBottom: 0xcfe6f2,
-      cloud: palette.cloud, sun: palette.sunGlow,
-      hill: palette.grass, hillDark: palette.grassDark,
-    }),
-  ui: {                                 // HUD 外观 token（写入 CSS 变量）
-    skyTop: '#e8f4fb', skyBottom: '#cfe6f2',
-    panel: '#6f8aa6', panelBorder: '#3c5066',
-    highlight: '#ffffff', ink: '#2b3a47', harvestText: '#4aa3ff',
-  },
-};
-export default snowy;
-```
+- **动态格子**：格子数 `n` 随资产数量从 2×2 扩到 3×3、4×4…。解释器用你的 `soil_*`/`fence` 自动平铺/排布,镜头随 n 平滑缩放。你只提供图与色。
+- **装饰/云**：树、池塘、花、云、鸟的位置与漂移都是解释器内置布局（与 pastoral 同布局）。
+- **plot/相机**：解释器算好可种植区原点,引擎据此落资产。作者无需关心。
 
-## 3. 两种实现土地的方式
+> 想要和田园**完全不同的布局**（不只是换色换图）？那超出当前主题格式,需要扩展解释器或新的主题模型——先和维护者确认。
 
-- **方式 A（推荐起步）**：复用 kit 的通用田园土地，只调 `LandPalette` 配色即可得到一块会动的土地（地基 + 耕地棋盘 + 篱笆 + 树/花/池塘/云/阳光）。两个版本：`buildPixelFarmLand`（**像素，默认**）/ `buildFarmLand`（矢量平滑）。
-- **方式 B（完全自定义）**：自己实现 `buildLand(grid)`，返回 `SceneHandle`：
-  ```ts
-  buildLand: (grid) => {
-    const view = new Container();
-    // ...自定义绘制；用 grid.cols/rows/tileSize...
-    return {
-      view,
-      size: { width, height },                 // 必填：用于居中
-      plot: { x, y, tileSize: grid.tileSize },  // 必填：可种植区原点（资产落位）
-      update: (dt) => { /* 动画 */ },
-      destroy: () => view.destroy({ children: true }),
-    };
-  }
-  ```
-  `plot` 必须正确——引擎按它把资产单位放到每个格子中心。
+## 5. 检查清单
 
-## 4. 必须适配"动态格子 + 镜头"
-
-- 格子数 `n` 是**动态**的：2×2 起步，资产塞满即扩张（3×3、4×4…）。`buildLand(grid)` 会被以不同 `grid.cols = grid.rows = n` 多次调用——**不要写死格子数**，一律用传入的 `grid`。
-- 引擎负责：扩张时的土地交叉淡入、镜头随 n 平滑缩放（n 小→视野低/格子大；n 大→视野拉高）。皮肤无需关心相机；只要 `size` 与 `plot` 正确即可。
-
-## 4b. 全屏皮肤背景 `buildBackdrop`（推荐：整页都是皮肤）
-
-可选的 `buildBackdrop(width, height) → SceneHandle`：在**屏幕空间**铺满整个视野的背景（土地在它之上居中），让四周不留白、"整个页面都是皮肤"。引擎在挂载 / 切主题 / 改窗口尺寸时重建它，并每帧调用其 `update(dt)`。
-
-- 最快：用 kit 的 `buildPixelSkyBackdrop(w, h, { skyTop, skyBottom, cloud, sun, hill, hillDark })`（像素天空渐变 + 漂移云 + 太阳 + 远山 + 小鸟）。
-- 也可自实现：返回 `{ view, update(dt), destroy() }`，`view` 覆盖 `(0,0)..(w,h)` 整个视野。
-- 不实现也行（回退到 `canvasBackground` 纯色），但四周会显空。
-
-## 5. UI token（`ui`）
-
-写入 `:root` CSS 变量（见 `src/ui/applyTheme.ts`），驱动 HUD（顶部收成、按钮、面板）外观。务必与土地配色协调；切换皮肤时土地与 HUD 会**一起**变。
-
-字段：`skyTop, skyBottom, panel, panelBorder, highlight, ink, harvestText`（可选 `fontFamily`）。
-
-## 6. 自测
-
-1. `npm run typecheck` 通过。
-2. `npm run dev`，点左下 🎨 选你的新皮肤，确认土地、全屏背景、HUD 同步切换、动画正常。
-3. 反复 ＋添加资产 触发 3×3/4×4，确认你的土地在不同 `n` 下都正确居中、`plot` 对齐格子、镜头平滑。
-
-## 7. 检查清单
-
-- [ ] 文件夹在 `src/skins/themes/<id>/`，`index.ts` 默认导出 `ThemeSkin`
-- [ ] `id` 唯一；`name` 含 `en` 与 `zh`
-- [ ] `buildLand(grid)` 用传入 grid，不写死格子数；返回 `size` 与 `plot`
-- [ ] （推荐）实现 `buildBackdrop`，全屏背景与土地/UI 配色协调
-- [ ] `canvasBackground` 与 `ui` 配色协调
-- [ ] 只 import `../../types` 与 `../../kit`，无跨皮肤 import
-- [ ] `typecheck` 通过；🎨 切换、3×3 扩张、镜头缩放均实测 OK
-```
+- [ ] `public/skins/<id>/` 含 `manifest.json` + **全部 12 张固定命名 PNG**
+- [ ] manifest 过 Zod 校验（照 pastoral-day 写;`parseThemeManifest` 不报错）
+- [ ] `land`/`sky`/`ui` 配色协调,切主题时土地与 HUD 一起变好看
+- [ ] `public/skins/registry.json` 加了 `kind:"theme"` 记录
+- [ ] 土壤两色可无缝平铺;像素风设 `pixelated:true`
+- [ ] `npm run dev`：🎨 切换正常,3×3/4×4 扩张时土地居中、镜头平滑
+- [ ] `npm run typecheck` 与 `npm run build` 通过
