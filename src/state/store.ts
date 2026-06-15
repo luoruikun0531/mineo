@@ -3,6 +3,8 @@ import type { Asset, Settings, ValueSnapshot } from '@/domain/types';
 import { productivityRate, totalValue } from '@/domain/earnings';
 import { appendSnapshot } from '@/domain/metrics';
 import { buildAsset, type AssetInput } from '@/domain/assetInput';
+import { fetchQuotes } from '@/market/quotes';
+import type { Quote } from '@/market/types';
 import {
   getSyncCode,
   loadSnapshot,
@@ -40,6 +42,8 @@ interface GameStore {
   updateAsset: (id: string, input: AssetInput) => void;
   removeAsset: (id: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
+  /** 投资资产：套用行情刷新（latestPrice/dayChangePct → value）。 */
+  applyQuotes: (quotes: Record<string, Quote>) => void;
   clearOfflineGain: () => void;
   /** widget：从快照同步（web 端编辑后实时反映），不计离线、不回存 */
   hydrate: (snap: Snapshot) => void;
@@ -126,6 +130,16 @@ export const useGameStore = create<GameStore>((set) => ({
     })),
   removeAsset: (id) => set((s) => ({ assets: s.assets.filter((a) => a.id !== id) })),
   updateSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
+  applyQuotes: (quotes) =>
+    set((s) => ({
+      assets: s.assets.map((a) => {
+        if (a.kind !== 'investment') return a;
+        const q = quotes[a.symbol];
+        if (!q || q.price <= 0) return a;
+        if (a.latestPrice === q.price && a.dayChangePct === q.dayChangePct) return a;
+        return { ...a, latestPrice: q.price, unitValue: q.price, dayChangePct: q.dayChangePct };
+      }),
+    })),
   clearOfflineGain: () => set({ offlineGain: 0 }),
   hydrate: (snap) =>
     set({
@@ -216,6 +230,23 @@ if (typeof window !== 'undefined') {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') doSave();
     });
+
+    // 投资资产：定期刷新行情（每 5 分钟；后端 cache-aside，只查请求过的代码）
+    const refreshQuotes = async (): Promise<void> => {
+      const symbols = useGameStore
+        .getState()
+        .assets.filter((a) => a.kind === 'investment')
+        .map((a) => a.symbol);
+      if (symbols.length === 0) return;
+      try {
+        const quotes = await fetchQuotes(symbols);
+        useGameStore.getState().applyQuotes(quotes);
+      } catch {
+        /* 离线/后端不可用：忽略，保留上次价格 */
+      }
+    };
+    void refreshQuotes();
+    setInterval(() => void refreshQuotes(), 5 * 60 * 1000);
   }
 }
 

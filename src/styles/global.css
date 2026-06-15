@@ -604,6 +604,23 @@ button:active.hud-btn,
   color: #c8553d;
 }
 
+/* 投资：代码 + 查价按钮一行；涨跌色 */
+.symbol-row {
+  display: flex;
+  gap: 6px;
+}
+.symbol-row input {
+  flex: 1;
+}
+.up {
+  color: #2e9e4f;
+  font-weight: 700;
+}
+.down {
+  color: #d0402f;
+  font-weight: 700;
+}
+
 /* 分段切换 */
 .seg {
   display: flex;

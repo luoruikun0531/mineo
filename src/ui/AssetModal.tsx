@@ -4,6 +4,7 @@ import { useT } from '@/i18n';
 import { displaySymbol } from '@/domain/currency';
 import { assetInputSchema, type AssetInput } from '@/domain/assetInput';
 import { ASSET_KINDS, type Asset, type AssetKind } from '@/domain/types';
+import { lookupQuote } from '@/market/quotes';
 import { listAssetSkins } from '@/skins';
 import { Modal } from './Modal';
 import { SkinPicker } from './SkinPicker';
@@ -21,7 +22,7 @@ const num = (s: string): number | undefined => {
   return Number.isNaN(n) ? NaN : n;
 };
 
-/** 边输入边加千分位逗号（仅保留数字与小数点） */
+/** 边输入边加千分位逗号 */
 const groupDigits = (s: string): string => {
   const cleaned = s.replace(/[^\d.]/g, '');
   if (cleaned === '') return '';
@@ -36,6 +37,8 @@ const toRate = (s: string): number | undefined => {
   const n = Number(t);
   return Number.isNaN(n) ? NaN : n / 100;
 };
+
+const pctStr = (p: number): string => `${p >= 0 ? '+' : ''}${(p * 100).toFixed(1)}%`;
 
 /** 录入弹窗：添加 / 编辑资产（4 类）。货币与隐私是全局设置，不在此录入。 */
 export function AssetModal({ editing, onClose }: AssetModalProps) {
@@ -65,16 +68,45 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
   const [rent, setRent] = useState(
     editing?.kind === 'realestate' ? groupDigits(String(editing.annualRent)) : '',
   );
+  // investment
   const [symbol, setSymbol] = useState(editing?.kind === 'investment' ? editing.symbol : '');
-  const [shares, setShares] = useState(
-    editing?.kind === 'investment' ? String(editing.shares) : '',
-  );
-  const [price, setPrice] = useState(
-    editing?.kind === 'investment' ? String(editing.latestPrice) : '',
-  );
+  const [shares, setShares] = useState(editing?.kind === 'investment' ? String(editing.shares) : '');
+  const [amount, setAmount] = useState('');
+  const [byAmount, setByAmount] = useState(false);
+  const [price, setPrice] = useState(editing?.kind === 'investment' ? editing.latestPrice : 0);
+  const [dayChange, setDayChange] = useState(editing?.kind === 'investment' ? editing.dayChangePct : 0);
+  const [priceOk, setPriceOk] = useState(editing?.kind === 'investment' && editing.latestPrice > 0);
+  const [checking, setChecking] = useState(false);
+
   const [err, setErr] = useState('');
 
+  const checkPrice = async () => {
+    const s = symbol.trim().toUpperCase();
+    setSymbol(s);
+    if (!s) {
+      setErr(t('err.symbol'));
+      return;
+    }
+    setChecking(true);
+    setErr('');
+    const q = await lookupQuote(s);
+    setChecking(false);
+    if (!q) {
+      setPriceOk(false);
+      setPrice(0);
+      setErr(t('err.symbol'));
+      return;
+    }
+    setPrice(q.price);
+    setDayChange(q.dayChangePct);
+    setPriceOk(true);
+  };
+
   const submit = () => {
+    let finalShares: number | undefined;
+    if (kind === 'investment') {
+      finalShares = byAmount ? (num(amount) != null && price > 0 ? (num(amount) as number) / price : undefined) : num(shares);
+    }
     const input: AssetInput = {
       kind,
       name,
@@ -85,8 +117,9 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
       estimatedValue: kind === 'realestate' ? num(estimate) : undefined,
       annualRent: kind === 'realestate' ? num(rent) : undefined,
       symbol: kind === 'investment' ? symbol : undefined,
-      shares: kind === 'investment' ? num(shares) : undefined,
-      latestPrice: kind === 'investment' ? num(price) : undefined,
+      shares: finalShares,
+      latestPrice: kind === 'investment' ? (priceOk ? price : undefined) : undefined,
+      dayChangePct: kind === 'investment' ? dayChange : undefined,
     };
     const res = assetInputSchema.safeParse(input);
     if (!res.success) {
@@ -194,14 +227,43 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
         <>
           <div className="field">
             <label>{t('asset.symbol')}</label>
-            <input
-              value={symbol}
-              placeholder="AAPL"
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-            />
+            <div className="symbol-row">
+              <input
+                value={symbol}
+                placeholder="AAPL"
+                onChange={(e) => {
+                  setSymbol(e.target.value.toUpperCase());
+                  setPriceOk(false);
+                }}
+              />
+              <button type="button" className="btn" disabled={checking} onClick={checkPrice}>
+                {checking ? t('asset.checking') : t('asset.checkPrice')}
+              </button>
+            </div>
+            {priceOk && (
+              <p className="hint">
+                {t('asset.latestPrice')}: {price} {sym} · {t('asset.dayChange')}{' '}
+                <span className={dayChange >= 0 ? 'up' : 'down'}>{pctStr(dayChange)}</span>
+              </p>
+            )}
           </div>
-          <NumField label={t('asset.shares')} value={shares} onChange={setShares} />
-          <NumField label={`${t('asset.latestPrice')} (${sym})`} value={price} onChange={setPrice} />
+
+          <div className="field">
+            <div className="seg">
+              <button type="button" className={!byAmount ? 'is-active' : ''} onClick={() => setByAmount(false)}>
+                {t('asset.shares')}
+              </button>
+              <button type="button" className={byAmount ? 'is-active' : ''} onClick={() => setByAmount(true)}>
+                {t('asset.amount')}
+              </button>
+            </div>
+          </div>
+
+          {byAmount ? (
+            <NumField label={`${t('asset.amount')} (${sym})`} value={amount} onChange={(v) => setAmount(groupDigits(v))} />
+          ) : (
+            <NumField label={t('asset.shares')} value={shares} onChange={setShares} />
+          )}
         </>
       )}
 
