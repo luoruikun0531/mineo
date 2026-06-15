@@ -102,6 +102,7 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
     setPrice(q.price);
     setDayChange(q.dayChangePct);
     setPriceOk(true);
+    if (!name.trim()) setName(s); // 投资默认名 = 代码（仍可自行编辑）
   };
 
   const submit = () => {
@@ -111,7 +112,7 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
     }
     const input: AssetInput = {
       kind,
-      name: kind === 'investment' ? symbol : name,
+      name: kind === 'investment' ? name.trim() || symbol : name,
       iconId,
       annualIncome: kind === 'cashflow' ? num(income) : undefined,
       principal: kind === 'deposit' ? num(principal) : undefined,
@@ -189,17 +190,17 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
         <p className="hint">{t(`asset.${kind}Hint`)}</p>
       </div>
 
-      {kind !== 'investment' && (
-        <div className="field">
-          <label>{t('asset.name')}</label>
-          <input
-            value={name}
-            maxLength={24}
-            placeholder={t('asset.namePlaceholder')}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-      )}
+      <div className="field">
+        <label>{t('asset.name')}</label>
+        <input
+          value={name}
+          maxLength={24}
+          placeholder={
+            kind === 'investment' ? symbol || t('asset.namePlaceholder') : t('asset.namePlaceholder')
+          }
+          onChange={(e) => setName(e.target.value)}
+        />
+      </div>
 
       <div className="field">
         <label>{t('asset.skin')}</label>

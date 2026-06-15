@@ -28,10 +28,12 @@ function tri(ctx: Ctx, cx: number, baseY: number, halfW: number, height: number,
 
 // ============================ 银行（存款）============================
 function buildPlaza(): Texture {
-  return makePixelTexture(46, 14, (ctx) => {
-    px(ctx, 0, 4, 46, 10, '#bdb39a');
-    px(ctx, 0, 4, 46, 1, '#d4caaf');
-    for (let x = 0; x < 46; x += 6) px(ctx, x, 4, 1, 10, '#a89e84');
+  return makePixelTexture(44, 26, (ctx) => {
+    px(ctx, 0, 0, 44, 26, '#c3b99f'); // 整格石板地坪
+    px(ctx, 0, 0, 44, 2, '#d4caaf');
+    for (let x = 0; x < 44; x += 7) px(ctx, x, 0, 1, 26, '#aca288'); // 竖缝
+    for (let y = 0; y < 26; y += 7) px(ctx, 0, y, 44, 1, '#aca288'); // 横缝
+    px(ctx, 0, 25, 44, 1, '#968c76');
   });
 }
 function buildBankBody(): Texture {
@@ -99,10 +101,12 @@ export function exportBank(): Record<string, string> {
 
 // ============================ 别墅（房产）============================
 function buildLawn(): Texture {
-  return makePixelTexture(46, 14, (ctx) => {
-    px(ctx, 0, 4, 46, 10, '#9ccc5a');
-    px(ctx, 0, 4, 46, 1, '#b6e070');
-    for (let x = 2; x < 46; x += 5) px(ctx, x, 8, 1, 2, '#84b84a');
+  return makePixelTexture(44, 26, (ctx) => {
+    px(ctx, 0, 0, 44, 26, '#9ccc5a'); // 整格草坪
+    px(ctx, 0, 0, 44, 2, '#b6e070');
+    for (let x = 2; x < 44; x += 5)
+      for (let y = 3; y < 25; y += 6) px(ctx, x, y, 1, 2, '#84b84a'); // 草簇铺满
+    px(ctx, 0, 25, 44, 1, '#7fae48');
   });
 }
 function buildVillaHouse(): Texture {
@@ -172,34 +176,40 @@ export function exportVilla(): Record<string, string> {
 
 // ===================== 办公室 / 工厂 / 股票（投资）=====================
 function buildPavement(): Texture {
-  return makePixelTexture(46, 12, (ctx) => {
-    px(ctx, 0, 3, 46, 9, '#8b8f98');
-    px(ctx, 0, 3, 46, 1, '#a2a6ae');
-    for (let x = 0; x < 46; x += 8) px(ctx, x, 3, 1, 9, '#777b84');
+  return makePixelTexture(44, 26, (ctx) => {
+    px(ctx, 0, 0, 44, 26, '#9296a0'); // 整格人行道/广场
+    px(ctx, 0, 0, 44, 2, '#a8acb4');
+    for (let x = 0; x < 44; x += 8) px(ctx, x, 0, 1, 26, '#7d818b'); // 板缝
+    for (let y = 0; y < 26; y += 8) px(ctx, 0, y, 44, 1, '#7d818b');
+    px(ctx, 0, 25, 44, 1, '#6f737c');
   });
 }
-const TOWER_H = 30;
+const TOWER_W = 34;
+const TOWER_H = 32;
 const WIN_ROWS = 5;
+const WIN_COLS = 4;
 function buildOfficeTower(body: string, parapet: string): Texture {
-  return makePixelTexture(26, TOWER_H, (ctx) => {
-    px(ctx, 3, 2, 20, TOWER_H - 2, body);
-    px(ctx, 4, 2, 1, TOWER_H - 2, '#7689a8');
-    px(ctx, 21, 2, 1, TOWER_H - 2, '#3f4c66');
-    px(ctx, 3, 2, 20, 3, parapet); // roof parapet
-    px(ctx, 3, TOWER_H - 3, 20, 3, '#37425c'); // base shade
-    px(ctx, 11, TOWER_H - 6, 4, 6, '#2a3550'); // door
+  const bx = 2;
+  const bw = TOWER_W - 4; // 楼体更宽，填满格子
+  return makePixelTexture(TOWER_W, TOWER_H, (ctx) => {
+    px(ctx, bx, 2, bw, TOWER_H - 2, body);
+    px(ctx, bx + 1, 2, 1, TOWER_H - 2, '#7689a8');
+    px(ctx, bx + bw - 2, 2, 1, TOWER_H - 2, '#3f4c66');
+    px(ctx, bx, 2, bw, 3, parapet); // roof parapet
+    px(ctx, bx, TOWER_H - 3, bw, 3, '#37425c'); // base shade
+    px(ctx, TOWER_W / 2 - 2, TOWER_H - 6, 4, 6, '#2a3550'); // door
     for (let r = 0; r < WIN_ROWS; r++)
-      for (let c = 0; c < 3; c++) px(ctx, 6 + c * 6, 7 + r * 4, 4, 3, '#33405c'); // dark windows
+      for (let c = 0; c < WIN_COLS; c++) px(ctx, 5 + c * 6, 7 + r * 4, 4, 3, '#33405c'); // dark windows
   });
 }
 function buildWindowFrames(): Texture[] {
   return [0, 1, 2].map((f) =>
-    makePixelTexture(26, TOWER_H, (ctx) => {
+    makePixelTexture(TOWER_W, TOWER_H, (ctx) => {
       for (let r = 0; r < WIN_ROWS; r++)
-        for (let c = 0; c < 3; c++) {
+        for (let c = 0; c < WIN_COLS; c++) {
           if ((r + c + f) % 3 !== 0) continue;
-          px(ctx, 6 + c * 6, 7 + r * 4, 4, 3, '#ffe27a');
-          px(ctx, 6 + c * 6, 7 + r * 4, 4, 1, '#fff3c0');
+          px(ctx, 5 + c * 6, 7 + r * 4, 4, 3, '#ffe27a');
+          px(ctx, 5 + c * 6, 7 + r * 4, 4, 1, '#fff3c0');
         }
     }),
   );

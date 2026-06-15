@@ -4,15 +4,15 @@
     { "id": "pastoral-dusk", "kind": "theme", "name": { "en": "Pastoral · Dusk", "zh": "田园 · 黄昏" }, "version": "1.0.0", "base": "/skins/pastoral-dusk" },
     { "id": "orchard", "kind": "asset", "name": { "en": "Orchard", "zh": "果园" }, "version": "1.0.0", "base": "/skins/orchard", "scope": { "kinds": ["cashflow"] } },
     { "id": "wheat-farm", "kind": "asset", "name": { "en": "Wheat Farm", "zh": "麦田场" }, "version": "1.0.0", "base": "/skins/wheat-farm", "scope": { "kinds": ["cashflow"] } },
-    { "id": "bank", "kind": "asset", "name": { "en": "Bank", "zh": "银行" }, "version": "1.0.0", "base": "/skins/bank", "scope": { "kinds": ["deposit"] } },
-    { "id": "villa", "kind": "asset", "name": { "en": "Villa", "zh": "别墅" }, "version": "1.0.0", "base": "/skins/villa", "scope": { "kinds": ["realestate"] } },
-    { "id": "office", "kind": "asset", "name": { "en": "Office", "zh": "办公室" }, "version": "1.0.0", "base": "/skins/office", "scope": { "kinds": ["investment"] } },
-    { "id": "factory", "kind": "asset", "name": { "en": "Factory", "zh": "工厂" }, "version": "1.0.0", "base": "/skins/factory", "scope": { "kinds": ["investment"] } },
-    { "id": "stock-aapl", "kind": "asset", "name": { "en": "Apple", "zh": "苹果" }, "version": "1.1.0", "base": "/skins/stock-aapl", "scope": { "symbols": ["AAPL"] } },
-    { "id": "stock-nvda", "kind": "asset", "name": { "en": "Nvidia", "zh": "英伟达" }, "version": "1.1.0", "base": "/skins/stock-nvda", "scope": { "symbols": ["NVDA"] } },
-    { "id": "stock-tsla", "kind": "asset", "name": { "en": "Tesla", "zh": "特斯拉" }, "version": "1.1.0", "base": "/skins/stock-tsla", "scope": { "symbols": ["TSLA"] } },
-    { "id": "stock-msft", "kind": "asset", "name": { "en": "Microsoft", "zh": "微软" }, "version": "1.1.0", "base": "/skins/stock-msft", "scope": { "symbols": ["MSFT"] } },
-    { "id": "stock-amzn", "kind": "asset", "name": { "en": "Amazon", "zh": "亚马逊" }, "version": "1.1.0", "base": "/skins/stock-amzn", "scope": { "symbols": ["AMZN"] } }
+    { "id": "bank", "kind": "asset", "name": { "en": "Bank", "zh": "银行" }, "version": "1.1.0", "base": "/skins/bank", "scope": { "kinds": ["deposit"] } },
+    { "id": "villa", "kind": "asset", "name": { "en": "Villa", "zh": "别墅" }, "version": "1.1.0", "base": "/skins/villa", "scope": { "kinds": ["realestate"] } },
+    { "id": "office", "kind": "asset", "name": { "en": "Office", "zh": "办公室" }, "version": "1.1.0", "base": "/skins/office", "scope": { "kinds": ["investment"] } },
+    { "id": "factory", "kind": "asset", "name": { "en": "Factory", "zh": "工厂" }, "version": "1.1.0", "base": "/skins/factory", "scope": { "kinds": ["investment"] } },
+    { "id": "stock-aapl", "kind": "asset", "name": { "en": "Apple", "zh": "苹果" }, "version": "1.2.0", "base": "/skins/stock-aapl", "scope": { "symbols": ["AAPL"] } },
+    { "id": "stock-nvda", "kind": "asset", "name": { "en": "Nvidia", "zh": "英伟达" }, "version": "1.2.0", "base": "/skins/stock-nvda", "scope": { "symbols": ["NVDA"] } },
+    { "id": "stock-tsla", "kind": "asset", "name": { "en": "Tesla", "zh": "特斯拉" }, "version": "1.2.0", "base": "/skins/stock-tsla", "scope": { "symbols": ["TSLA"] } },
+    { "id": "stock-msft", "kind": "asset", "name": { "en": "Microsoft", "zh": "微软" }, "version": "1.2.0", "base": "/skins/stock-msft", "scope": { "symbols": ["MSFT"] } },
+    { "id": "stock-amzn", "kind": "asset", "name": { "en": "Amazon", "zh": "亚马逊" }, "version": "1.2.0", "base": "/skins/stock-amzn", "scope": { "symbols": ["AMZN"] } }
   ],
   "defaults": ["pastoral-day", "pastoral-dusk", "orchard", "wheat-farm", "bank", "villa", "office", "factory"]
 }

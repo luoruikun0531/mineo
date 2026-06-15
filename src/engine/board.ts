@@ -24,6 +24,8 @@ interface Unit {
   id: string;
   asset: Asset;
   handle: AssetSkinHandle;
+  /** 实际构建用的皮肤 id（皮肤未就绪时可能是占位回退 wheat-farm）。 */
+  skinId: string;
   label: Container;
   x: number;
   y: number;
@@ -163,8 +165,12 @@ export class BoardController {
       seen.add(asset.id);
       let unit = this.units.get(asset.id);
 
-      // 换了皮肤 → 重建单位
-      if (unit && unit.asset.iconId !== asset.iconId) {
+      // 换了皮肤、或当前为占位回退而真皮肤已下载就绪 → 重建单位
+      if (
+        unit &&
+        (unit.asset.iconId !== asset.iconId ||
+          (unit.skinId !== asset.iconId && getAssetSkin(asset.iconId)))
+      ) {
         this.disposeUnit(unit);
         this.units.delete(asset.id);
         unit = undefined;
@@ -242,6 +248,7 @@ export class BoardController {
       id: asset.id,
       asset,
       handle,
+      skinId: skin.id,
       label,
       x: 0,
       y: 0,
