@@ -1,0 +1,719 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  /* 暖色田园基调（由 applyTheme 按主题覆盖） */
+  --sky-top: #ffe9b8;
+  --sky-bottom: #ffd28a;
+  --panel: #c98a4b;
+  --panel-border: #7a4e25;
+  --highlight: #fff6d8;
+  --ink: #4a3526;
+  --harvest-text: #ffb300;
+
+  --pixel-font: 'Press Start 2P', ui-monospace, 'Courier New', monospace;
+  --label-font: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+
+  font-family: var(--label-font);
+  color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+.app {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  background: var(--sky-bottom);
+}
+
+.game-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.game-canvas canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* ---- 像素面板 / 按钮通用 ---- */
+.harvest-stat,
+.hud-btn,
+.lang-toggle,
+.theme-switcher__toggle,
+.theme-switcher__menu,
+.asset-controls__remove,
+.add-asset-fab {
+  background: var(--panel);
+  border: 3px solid var(--panel-border);
+  border-radius: 0;
+  box-shadow: 0 4px 0 var(--panel-border), inset 0 2px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+  color: #fff;
+}
+
+.hud-btn,
+.lang-toggle button,
+.theme-switcher__toggle,
+.theme-switcher__item,
+.asset-controls__remove,
+.add-asset-fab {
+  cursor: pointer;
+  font-family: var(--label-font);
+  font-weight: 700;
+}
+
+button:active.hud-btn,
+.add-asset-fab:active,
+.asset-controls__remove:active,
+.theme-switcher__toggle:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--panel-border), inset 0 2px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* ---- 顶部 HUD ---- */
+.top-bar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  pointer-events: none;
+}
+
+.top-bar > * {
+  pointer-events: auto;
+}
+
+.harvest-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 14px;
+  min-width: 126px;
+}
+
+.harvest-stat__label {
+  font-size: 11px;
+  color: var(--highlight);
+  letter-spacing: 0.5px;
+}
+
+.harvest-stat__value {
+  font-family: var(--pixel-font);
+  font-size: 15px;
+  line-height: 1.3;
+  color: #fff;
+  text-shadow: 1px 1px 0 var(--panel-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-btn {
+  padding: 0 14px;
+  font-size: 12px;
+}
+
+/* ---- 语言切换 ---- */
+.lang-toggle {
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  gap: 2px;
+}
+
+.lang-toggle button {
+  min-width: 32px;
+  padding: 6px 6px;
+  font-size: 12px;
+  color: var(--highlight);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.lang-toggle button.is-active {
+  color: var(--panel-border);
+  background: var(--highlight);
+  box-shadow: inset 0 0 0 2px var(--panel-border);
+}
+
+/* ---- 土地/UI 皮肤切换 ---- */
+.theme-switcher {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+}
+
+.theme-switcher__toggle {
+  padding: 11px 16px;
+  font-size: 13px;
+}
+
+.theme-switcher__menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  min-width: 184px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.theme-switcher__title {
+  font-size: 11px;
+  color: var(--highlight);
+  padding: 2px 6px 6px;
+}
+
+.theme-switcher__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  font-size: 13px;
+  color: #fff;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  text-align: left;
+}
+
+.theme-switcher__item:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.theme-switcher__item.is-active {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.theme-switcher__swatch {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+/* ---- 添加资产 ---- */
+.add-bar {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.add-bar__hint {
+  font-family: var(--pixel-font);
+  font-size: 11px;
+  line-height: 1.6;
+  color: #fff;
+  background: var(--panel);
+  border: 3px solid var(--panel-border);
+  box-shadow: 0 4px 0 var(--panel-border);
+  padding: 8px 12px;
+  animation: offline-drop 0.3s ease-out;
+}
+
+.add-asset-fab {
+  background: var(--panel);
+  border: 3px solid var(--panel-border);
+  box-shadow: 0 4px 0 var(--panel-border), inset 0 2px 0 rgba(255, 255, 255, 0.22);
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
+.add-asset-fab:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--panel-border);
+}
+
+/* ---- 桌面 widget（只读展示） ---- */
+.widget {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background: var(--sky-bottom);
+  overflow: hidden;
+}
+
+.widget-totals {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--panel);
+  border-bottom: 3px solid var(--panel-border);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+  z-index: 1;
+  cursor: move; /* 提示：此条可拖动窗口 */
+}
+
+/* 让整条把手都能拖动：子元素不拦截，命中始终落在带 drag-region 的父节点上 */
+.widget-totals > * {
+  pointer-events: none;
+}
+
+.widget-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  color: #fff;
+}
+
+.widget-stat__label {
+  font-size: 10px;
+  color: var(--highlight);
+}
+
+.widget-stat__value {
+  font-family: var(--pixel-font);
+  font-size: 13px;
+  color: #fff;
+  text-shadow: 1px 1px 0 var(--panel-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.widget-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 滤镜层：透明度 + 黑白（裹住收成条与舞台，不含右上角设置控件） */
+.widget-fx {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 右上角工具：齿轮 + 滤镜面板（在滤镜层外，始终清晰可操作） */
+.widget-tools {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.widget-gear {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid var(--panel-border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.widget-gear:hover {
+  opacity: 1;
+}
+
+.widget-panel {
+  min-width: 156px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 8px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
+}
+
+.widget-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #fff;
+}
+
+.widget-panel__row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.widget-panel__row--check {
+  justify-content: space-between;
+}
+
+.widget-panel__val {
+  font-family: var(--pixel-font);
+  font-size: 10px;
+  min-width: 34px;
+  text-align: right;
+}
+
+/* widget 配对屏（云同步未配对时） */
+.widget--pair {
+  align-items: center;
+  justify-content: center;
+}
+
+.pair {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  text-align: center;
+}
+
+.pair__title {
+  margin: 0;
+  font-size: 15px;
+  color: #fff;
+}
+
+.pair__hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--highlight);
+  line-height: 1.5;
+}
+
+.pair__input {
+  width: 160px;
+  text-align: center;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  font-family: var(--pixel-font);
+  font-size: 18px;
+  padding: 8px 10px;
+  border: 3px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: #fff;
+}
+
+/* 设置面板里的配对码展示 */
+.sync-code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sync-code__value {
+  flex: 1;
+  font-family: var(--pixel-font);
+  font-size: 18px;
+  letter-spacing: 4px;
+  padding: 6px 10px;
+  border: 3px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: center;
+}
+
+/* ---- 弹窗 ---- */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(40, 26, 14, 0.45);
+  padding: 16px;
+}
+
+.modal {
+  width: 100%;
+  max-width: 380px;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--highlight);
+  color: var(--ink);
+  border: 3px solid var(--panel-border);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+}
+
+.modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--panel);
+  color: #fff;
+  border-bottom: 3px solid var(--panel-border);
+}
+
+.modal__title {
+  font-family: var(--pixel-font);
+  font-size: 13px;
+  text-shadow: 1px 1px 0 var(--panel-border);
+}
+
+.modal__close {
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.modal__body {
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.modal__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 3px solid rgba(122, 78, 37, 0.25);
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* ---- 表单 ---- */
+.field {
+  margin-bottom: 14px;
+}
+
+.field > label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+
+.field input[type='text'],
+.field input:not([type]),
+.field input[inputmode] {
+  width: 100%;
+  padding: 9px 10px;
+  font-size: 14px;
+  font-family: var(--label-font);
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--panel-border);
+  border-radius: 0;
+}
+
+/* 隐私模式：1 货币 = N 金币 的行内输入 */
+.goldrate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.goldrate__unit {
+  font-family: var(--pixel-font);
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.goldrate__eq {
+  color: var(--ink);
+  opacity: 0.6;
+}
+
+.field .goldrate input {
+  width: 96px;
+  text-align: center;
+}
+
+.goldrate__coin {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.field .check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.field .check input {
+  width: 18px;
+  height: 18px;
+}
+
+.hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: rgba(74, 53, 38, 0.7);
+}
+
+.form-error {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #c8553d;
+}
+
+/* 分段切换 */
+.seg {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.seg--wrap {
+  flex-wrap: wrap;
+}
+
+.seg button {
+  flex: 1;
+  min-width: 64px;
+  padding: 9px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--panel-border);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.seg button.is-active {
+  color: #fff;
+  background: var(--panel);
+}
+
+/* 皮肤选择 */
+.skin-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.skin-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  background: #fff;
+  border: 2px solid var(--panel-border);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.skin-card.is-active {
+  outline: 3px solid var(--harvest-text);
+  outline-offset: -1px;
+}
+
+.skin-card__img {
+  width: 56px;
+  height: 56px;
+  image-rendering: pixelated;
+}
+
+.skin-card__ph {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.skin-card__name {
+  font-size: 11px;
+  color: var(--ink);
+}
+
+/* 通用按钮 */
+.btn {
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--panel-border);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.btn--primary {
+  color: #fff;
+  background: #6fae4f;
+  border-color: #4a7a32;
+}
+
+.btn--danger {
+  color: #fff;
+  background: #c8553d;
+  border-color: #8a3826;
+}
+
+.btn:active {
+  transform: translateY(2px);
+}
+
+/* ---- 离线收益提示 ---- */
+.offline-toast {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  font-family: var(--pixel-font);
+  font-size: 13px;
+  color: #fff;
+  background: var(--panel);
+  border: 3px solid var(--panel-border);
+  border-radius: 0;
+  box-shadow: 0 4px 0 var(--panel-border), inset 0 2px 0 rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  text-shadow: 1px 1px 0 var(--panel-border);
+  animation: offline-drop 0.3s ease-out;
+}
+
+@keyframes offline-drop {
+  from {
+    transform: translate(-50%, -16px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}

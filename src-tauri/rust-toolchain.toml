@@ -1,0 +1,4 @@
+# 固定本项目的 Rust 版本：新版 rustc(1.96) 编译 Tauri 依赖 brotli 时报错，
+# 用 2025 稳定版即可正常打包。rustup 会按需自动安装该版本。
+[toolchain]
+channel = "1.88.0"
