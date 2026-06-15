@@ -9,7 +9,13 @@ import {
 import { interpretAssetSkin } from './runtime/interpretAsset';
 import { interpretThemeSkin } from './runtime/interpretTheme';
 import { loadTexture } from './runtime/texture';
-import { preloadAssetSkins, registerAssetSkin, registerTheme } from './registry';
+import {
+  getAssetSkin,
+  getTheme,
+  preloadAssetSkins,
+  registerAssetSkin,
+  registerTheme,
+} from './registry';
 import { themeFrameNames, type AssetManifest, type ThemeManifest } from './format/manifest';
 
 /** 把本地库里的一个包解释并注册进皮肤注册表。 */
@@ -60,4 +66,28 @@ export async function installAndRegisterSkin(entry: RegistryEntry): Promise<void
   const pkg = await installPackage(entry);
   await registerStored(pkg);
   if (pkg.kind === 'asset') await preloadAssetSkins();
+}
+
+/**
+ * 确保给定皮肤 id（当前选择：主题 + 各资产 iconId）都已注册可用；
+ * 未注册的从 Registry 下载安装（用于挂件/web 端镜像同步来的、本地还没有的皮肤）。
+ * 返回是否有新装（调用方据此决定是否重建画布）。
+ */
+export async function ensureSkinsInstalled(ids: string[]): Promise<boolean> {
+  const missing = [...new Set(ids)].filter((id) => id && !getAssetSkin(id) && !getTheme(id));
+  if (missing.length === 0) return false;
+
+  const registry = await fetchRegistry();
+  let changed = false;
+  for (const id of missing) {
+    const entry = registry.skins.find((s) => s.id === id);
+    if (!entry) continue;
+    try {
+      await installAndRegisterSkin(entry);
+      changed = true;
+    } catch {
+      /* 离线/缺失：跳过该皮肤，不阻塞其它 */
+    }
+  }
+  return changed;
 }

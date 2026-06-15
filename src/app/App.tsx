@@ -6,7 +6,7 @@ import { AssetModal } from '@/ui/AssetModal';
 import { SettingsModal } from '@/ui/SettingsModal';
 import { applyUITokens } from '@/ui/applyTheme';
 import { LanguageProvider, useLanguage, useT } from '@/i18n';
-import { defaultTheme, getTheme, initSkins, listThemes } from '@/skins';
+import { defaultTheme, ensureSkinsInstalled, getTheme, initSkins, listThemes } from '@/skins';
 import { isWidgetMode, useGameStore } from '@/state/store';
 import { cloudEnabled } from '@/sync/cloud';
 import { WidgetSettings } from '@/widget/WidgetSettings';
@@ -29,6 +29,31 @@ function useThemeTokens(themeId: string) {
     const theme = getTheme(themeId) ?? defaultTheme();
     applyUITokens(theme.ui);
   }, [themeId]);
+}
+
+/**
+ * 确保当前选择（主题 + 各资产皮肤）已装到本地；缺的自动从 Registry 下载。
+ * 用于挂件/web 端镜像同步来的、本地还没有的皮肤。
+ * 下到新皮肤后只「触碰」assets 触发棋盘重建（相机平滑跟随，不重挂画布）。
+ */
+function useEnsureSelectionSkins(): void {
+  const themeId = useGameStore((s) => s.themeId);
+  const iconKey = useGameStore((s) =>
+    [...new Set(s.assets.map((a) => a.iconId))].sort().join('|'),
+  );
+  useEffect(() => {
+    let alive = true;
+    const ids = [themeId, ...iconKey.split('|')].filter(Boolean);
+    if (ids.length === 0) return;
+    void ensureSkinsInstalled(ids).then((changed) => {
+      if (alive && changed) {
+        useGameStore.setState((s) => ({ assets: s.assets.slice() }));
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [themeId, iconKey]);
 }
 
 /** 底部添加按钮（空地图时附引导） */
@@ -76,6 +101,7 @@ function FullApp() {
   const setThemeId = useGameStore((s) => s.setThemeId);
   const [modal, setModal] = useState<ModalState>({ type: 'none' });
   useThemeTokens(themeId);
+  useEnsureSelectionSkins();
 
   useEffect(() => {
     if (!themeId) {
@@ -145,6 +171,7 @@ function WidgetApp() {
   const t = useT();
   useThemeTokens(themeId);
   const sym = displaySymbol(settings);
+  useEnsureSelectionSkins();
 
   const [prefs, setPrefs] = useState<WidgetPrefs>(loadWidgetPrefs);
   const updatePrefs = useCallback((patch: Partial<WidgetPrefs>) => {
