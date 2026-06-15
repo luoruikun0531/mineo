@@ -1,7 +1,8 @@
 import type { Asset, Ledger, Settings } from '@/domain/types';
 
 /** 本地持久化快照（localStorage）。带 savedAt 以便计算离线挂机收益。 */
-export const STORAGE_KEY = 'mineo:v1';
+// v2: 资产模型归一化（value/productivityPerSecond + 4 类）；旧 v1 数据自动失效（pre-launch 重置）。
+export const STORAGE_KEY = 'mineo:v2';
 const KEY = STORAGE_KEY;
 
 export interface Snapshot {

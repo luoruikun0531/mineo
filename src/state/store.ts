@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Asset, Ledger, Settings } from '@/domain/types';
-import { perSecondRate } from '@/domain/earnings';
+import { productivityRate } from '@/domain/earnings';
 import { buildAsset, type AssetInput } from '@/domain/assetInput';
 import {
   getSyncCode,
@@ -109,7 +109,7 @@ function initFromSnapshot(): InitState {
   let offline = 0;
   for (const a of snap.assets) {
     try {
-      offline += Math.floor(perSecondRate(a, snap.settings) * elapsed);
+      offline += Math.floor(productivityRate(a, snap.settings) * elapsed);
     } catch {
       // 跳过无法计算的资产
     }
@@ -147,7 +147,9 @@ export const useGameStore = create<GameStore>((set) => ({
   updateAsset: (id, input) =>
     set((s) => ({
       assets: s.assets.map((a) =>
-        a.id === id ? buildAsset(input, a.id, a.createdAt, a.cell) : a,
+        a.id === id
+          ? buildAsset(input, a.id, Date.now(), { createdAt: a.createdAt, cell: a.cell, prev: a })
+          : a,
       ),
     })),
   removeAsset: (id) => set((s) => ({ assets: s.assets.filter((a) => a.id !== id) })),

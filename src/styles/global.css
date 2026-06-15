@@ -598,6 +598,14 @@ button:active.hud-btn,
   flex-wrap: wrap;
 }
 
+/* 4 类资产：2×2 换行 */
+.seg--4 {
+  flex-wrap: wrap;
+}
+.seg--4 button {
+  flex: 1 1 calc(50% - 3px);
+}
+
 .seg button {
   flex: 1;
   min-width: 64px;

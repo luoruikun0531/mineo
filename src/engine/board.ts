@@ -1,6 +1,6 @@
 import { Container, Graphics, Text, type TextStyleOptions } from 'pixi.js';
 import type { Asset, Settings } from '@/domain/types';
-import { perSecondRate } from '@/domain/earnings';
+import { productivityRate } from '@/domain/earnings';
 import { initHarvest, progress, type HarvestState } from '@/domain/harvest';
 import { formatHarvest } from '@/domain/currency';
 import {
@@ -110,7 +110,7 @@ export class BoardController {
 
   private rateFor(asset: Asset): number {
     try {
-      return perSecondRate(asset, this.settings);
+      return productivityRate(asset, this.settings);
     } catch {
       return 0;
     }

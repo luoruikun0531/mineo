@@ -3,7 +3,7 @@ import { useGameStore } from '@/state/store';
 import { useT } from '@/i18n';
 import { displaySymbol } from '@/domain/currency';
 import { assetInputSchema, type AssetInput } from '@/domain/assetInput';
-import type { Asset, AssetKind } from '@/domain/types';
+import { ASSET_KINDS, type Asset, type AssetKind } from '@/domain/types';
 import { listAssetSkins } from '@/skins';
 import { Modal } from './Modal';
 import { SkinPicker } from './SkinPicker';
@@ -21,13 +21,23 @@ const num = (s: string): number | undefined => {
   return Number.isNaN(n) ? NaN : n;
 };
 
-/** 边输入边加千分位逗号（仅保留数字） */
+/** 边输入边加千分位逗号（仅保留数字与小数点） */
 const groupDigits = (s: string): string => {
-  const digits = s.replace(/[^\d]/g, '');
-  return digits === '' ? '' : Number(digits).toLocaleString('en-US');
+  const cleaned = s.replace(/[^\d.]/g, '');
+  if (cleaned === '') return '';
+  const [int, ...rest] = cleaned.split('.');
+  const head = int === '' ? '' : Number(int).toLocaleString('en-US');
+  return rest.length ? `${head}.${rest.join('')}` : head;
 };
 
-/** 录入弹窗：添加 / 编辑资产。货币与隐私是全局设置，不在此录入。 */
+const toRate = (s: string): number | undefined => {
+  const t = s.trim();
+  if (t === '') return undefined;
+  const n = Number(t);
+  return Number.isNaN(n) ? NaN : n / 100;
+};
+
+/** 录入弹窗：添加 / 编辑资产（4 类）。货币与隐私是全局设置，不在此录入。 */
 export function AssetModal({ editing, onClose }: AssetModalProps) {
   const t = useT();
   const settings = useGameStore((s) => s.settings);
@@ -44,10 +54,23 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
     editing?.kind === 'cashflow' ? groupDigits(String(editing.annualIncome)) : '',
   );
   const [principal, setPrincipal] = useState(
-    editing?.kind === 'investment' ? groupDigits(String(editing.principal)) : '',
+    editing?.kind === 'deposit' ? groupDigits(String(editing.principal)) : '',
   );
   const [rate, setRate] = useState(
-    editing?.kind === 'investment' ? String(editing.annualReturnRate * 100) : '8',
+    editing?.kind === 'deposit' ? String(editing.annualRate * 100) : '3',
+  );
+  const [estimate, setEstimate] = useState(
+    editing?.kind === 'realestate' ? groupDigits(String(editing.estimatedValue)) : '',
+  );
+  const [rent, setRent] = useState(
+    editing?.kind === 'realestate' ? groupDigits(String(editing.annualRent)) : '',
+  );
+  const [symbol, setSymbol] = useState(editing?.kind === 'investment' ? editing.symbol : '');
+  const [shares, setShares] = useState(
+    editing?.kind === 'investment' ? String(editing.shares) : '',
+  );
+  const [price, setPrice] = useState(
+    editing?.kind === 'investment' ? String(editing.latestPrice) : '',
   );
   const [err, setErr] = useState('');
 
@@ -57,8 +80,13 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
       name,
       iconId,
       annualIncome: kind === 'cashflow' ? num(income) : undefined,
-      principal: kind === 'investment' ? num(principal) : undefined,
-      annualReturnRate: kind === 'investment' ? toRate(rate) : undefined,
+      principal: kind === 'deposit' ? num(principal) : undefined,
+      annualRate: kind === 'deposit' ? toRate(rate) : undefined,
+      estimatedValue: kind === 'realestate' ? num(estimate) : undefined,
+      annualRent: kind === 'realestate' ? num(rent) : undefined,
+      symbol: kind === 'investment' ? symbol : undefined,
+      shares: kind === 'investment' ? num(shares) : undefined,
+      latestPrice: kind === 'investment' ? num(price) : undefined,
     };
     const res = assetInputSchema.safeParse(input);
     if (!res.success) {
@@ -70,7 +98,9 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
             ? t('err.rate')
             : msg === 'icon'
               ? t('err.skin')
-              : t('err.amount'),
+              : msg === 'symbol'
+                ? t('err.symbol')
+                : t('err.amount'),
       );
       return;
     }
@@ -109,25 +139,19 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
     >
       <div className="field">
         <label>{t('asset.kind')}</label>
-        <div className="seg">
-          <button
-            type="button"
-            className={kind === 'cashflow' ? 'is-active' : ''}
-            onClick={() => setKind('cashflow')}
-          >
-            {t('asset.cashflow')}
-          </button>
-          <button
-            type="button"
-            className={kind === 'investment' ? 'is-active' : ''}
-            onClick={() => setKind('investment')}
-          >
-            {t('asset.investment')}
-          </button>
+        <div className="seg seg--4">
+          {ASSET_KINDS.map((k) => (
+            <button
+              key={k}
+              type="button"
+              className={kind === k ? 'is-active' : ''}
+              onClick={() => setKind(k)}
+            >
+              {t(`asset.${k}`)}
+            </button>
+          ))}
         </div>
-        <p className="hint">
-          {t(kind === 'cashflow' ? 'asset.cashflowHint' : 'asset.investmentHint')}
-        </p>
+        <p className="hint">{t(`asset.${kind}Hint`)}</p>
       </div>
 
       <div className="field">
@@ -145,40 +169,39 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
         <SkinPicker value={iconId} onChange={setIconId} />
       </div>
 
-      {kind === 'cashflow' ? (
-        <div className="field">
-          <label>
-            {t('asset.annualIncome')} ({sym})
-          </label>
-          <input
-            inputMode="numeric"
-            value={income}
-            placeholder="0"
-            onChange={(e) => setIncome(groupDigits(e.target.value))}
-          />
-        </div>
-      ) : (
+      {kind === 'cashflow' && (
+        <NumField label={`${t('asset.annualIncome')} (${sym})`} value={income} onChange={(v) => setIncome(groupDigits(v))} />
+      )}
+
+      {kind === 'deposit' && (
+        <>
+          <NumField label={`${t('asset.principal')} (${sym})`} value={principal} onChange={(v) => setPrincipal(groupDigits(v))} />
+          <div className="field">
+            <label>{t('asset.annualRate')}</label>
+            <input inputMode="decimal" value={rate} placeholder="3" onChange={(e) => setRate(e.target.value)} />
+          </div>
+        </>
+      )}
+
+      {kind === 'realestate' && (
+        <>
+          <NumField label={`${t('asset.estimatedValue')} (${sym})`} value={estimate} onChange={(v) => setEstimate(groupDigits(v))} />
+          <NumField label={`${t('asset.annualRent')} (${sym})`} value={rent} onChange={(v) => setRent(groupDigits(v))} />
+        </>
+      )}
+
+      {kind === 'investment' && (
         <>
           <div className="field">
-            <label>
-              {t('asset.principal')} ({sym})
-            </label>
+            <label>{t('asset.symbol')}</label>
             <input
-              inputMode="numeric"
-              value={principal}
-              placeholder="0"
-              onChange={(e) => setPrincipal(groupDigits(e.target.value))}
+              value={symbol}
+              placeholder="AAPL"
+              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
             />
           </div>
-          <div className="field">
-            <label>{t('asset.returnRate')}</label>
-            <input
-              inputMode="decimal"
-              value={rate}
-              placeholder="8"
-              onChange={(e) => setRate(e.target.value)}
-            />
-          </div>
+          <NumField label={t('asset.shares')} value={shares} onChange={setShares} />
+          <NumField label={`${t('asset.latestPrice')} (${sym})`} value={price} onChange={setPrice} />
         </>
       )}
 
@@ -187,9 +210,19 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
   );
 }
 
-function toRate(s: string): number | undefined {
-  const t = s.trim();
-  if (t === '') return undefined;
-  const n = Number(t);
-  return Number.isNaN(n) ? NaN : n / 100;
+function NumField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <input inputMode="numeric" value={value} placeholder="0" onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
 }
