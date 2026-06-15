@@ -143,7 +143,6 @@ export function GameCanvas({ onUnitTap, widget = false }: GameCanvasProps) {
   // 收成回调（用 getState 取最新 action，避免闭包陈旧）。widget 只读：不写账本、不接编辑。
   useEffect(() => {
     if (!ready || widget) return;
-    boardRef.current?.setOnHarvest((x) => useGameStore.getState().addHarvest(x));
     boardRef.current?.setOnUnitTap((id) => onUnitTapRef.current?.(id));
   }, [ready, widget]);
 

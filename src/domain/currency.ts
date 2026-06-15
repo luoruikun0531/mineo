@@ -21,6 +21,14 @@ export function formatAmount(value: number): string {
   return Math.trunc(value).toLocaleString('en-US');
 }
 
+/** 展示单位换算：隐私模式下 × goldRate（货币 → 金币），否则原值。 */
+export function displayValue(value: number, settings: Settings): number {
+  if (settings.privacyMode && settings.goldRate && settings.goldRate > 0) {
+    return value * settings.goldRate;
+  }
+  return value;
+}
+
 /** "+1,240 ¥" 形式的收成文案 */
 export function formatHarvest(value: number, settings: Settings): string {
   return `+${formatAmount(value)} ${displaySymbol(settings)}`;

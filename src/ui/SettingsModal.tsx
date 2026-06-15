@@ -58,6 +58,22 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
       </div>
 
       <div className="field">
+        <label>
+          {t('settings.goal')} ({CURRENCY_SYMBOL[settings.currency]})
+        </label>
+        <input
+          inputMode="numeric"
+          value={settings.goalValue ? Number(settings.goalValue).toLocaleString('en-US') : ''}
+          placeholder="1,000,000"
+          onChange={(e) => {
+            const n = Number(e.target.value.replace(/[^\d]/g, ''));
+            updateSettings({ goalValue: n > 0 ? n : undefined });
+          }}
+        />
+        <p className="hint">{t('settings.goalHint')}</p>
+      </div>
+
+      <div className="field">
         <label className="check">
           <input
             type="checkbox"

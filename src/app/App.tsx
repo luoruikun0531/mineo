@@ -15,7 +15,10 @@ import {
   saveWidgetPrefs,
   type WidgetPrefs,
 } from '@/widget/prefs';
-import { displaySymbol, formatAmount } from '@/domain/currency';
+import { displaySymbol, displayValue, formatAmount } from '@/domain/currency';
+import { totalValue } from '@/domain/earnings';
+import { dailyProductivity } from '@/domain/metrics';
+import { useNow } from '@/ui/useNow';
 import type { Asset } from '@/domain/types';
 
 type ModalState =
@@ -165,13 +168,18 @@ function WidgetPairScreen() {
 /** 桌面 widget：只读展示——第一行收成，下面只显示格子区。数据从 web 端同步。 */
 function WidgetApp() {
   const themeId = useGameStore((s) => s.themeId);
-  const ledger = useGameStore((s) => s.ledger);
+  const assets = useGameStore((s) => s.assets);
+  const snapshots = useGameStore((s) => s.valueSnapshots);
   const settings = useGameStore((s) => s.settings);
   const syncCode = useGameStore((s) => s.syncCode);
   const t = useT();
   useThemeTokens(themeId);
-  const sym = displaySymbol(settings);
   useEnsureSelectionSkins();
+  const sym = displaySymbol(settings);
+  const now = useNow();
+  const total = displayValue(totalValue(assets, now), settings);
+  const daily = displayValue(dailyProductivity(assets, snapshots, now), settings);
+  const signed = (v: number) => (v >= 0 ? '+' : '−') + formatAmount(Math.abs(v));
 
   const [prefs, setPrefs] = useState<WidgetPrefs>(loadWidgetPrefs);
   const updatePrefs = useCallback((patch: Partial<WidgetPrefs>) => {
@@ -198,15 +206,15 @@ function WidgetApp() {
         {/* 顶部收成条同时充当拖动把手（Tauri 无边框窗口） */}
         <div className="widget-totals" data-tauri-drag-region>
           <div className="widget-stat">
-            <span className="widget-stat__label">☀ {t('hud.today')}</span>
+            <span className="widget-stat__label">💎 {t('hud.totalValue')}</span>
             <span className="widget-stat__value">
-              +{formatAmount(ledger.today)} {sym}
+              {formatAmount(total)} {sym}
             </span>
           </div>
           <div className="widget-stat">
-            <span className="widget-stat__label">{t('hud.total')}</span>
+            <span className="widget-stat__label">☀ {t('hud.daily')}</span>
             <span className="widget-stat__value">
-              +{formatAmount(ledger.cumulative)} {sym}
+              {signed(daily)} {sym}
             </span>
           </div>
         </div>

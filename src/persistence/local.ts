@@ -1,4 +1,4 @@
-import type { Asset, Ledger, Settings } from '@/domain/types';
+import type { Asset, Settings, ValueSnapshot } from '@/domain/types';
 
 /** 本地持久化快照（localStorage）。带 savedAt 以便计算离线挂机收益。 */
 // v2: 资产模型归一化（value/productivityPerSecond + 4 类）；旧 v1 数据自动失效（pre-launch 重置）。
@@ -9,7 +9,7 @@ export interface Snapshot {
   assets: Asset[];
   settings: Settings;
   themeId: string;
-  ledger: Ledger;
+  valueSnapshots: ValueSnapshot[];
   savedAt: number;
 }
 
@@ -18,7 +18,7 @@ export function loadSnapshot(): Snapshot | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as Snapshot;
-    if (!s || !Array.isArray(s.assets) || !s.settings || !s.ledger) return null;
+    if (!s || !Array.isArray(s.assets) || !s.settings) return null;
     return s;
   } catch {
     return null;
