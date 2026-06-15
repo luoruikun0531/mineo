@@ -46,9 +46,9 @@
 ## 4. 投资动画（7 档）+ 涨跌标签（`engine/board.ts`）
 
 投资类**无进度条/金币**（`handle.setQuoteMode(true)` 隐藏进度条）；改为：
-- 头顶标签替换成**当日涨跌幅**徽章（绿涨/红跌）。
+- 资产**正上方**浮一个**当日涨跌幅**标签（绿涨/红跌，描边像素数字），**上下跳动**（跟"爆金币"同款律动，但持续循环）。
 - 当日涨跌 → 7 档 `PriceState`（up3/up2/up1/plain/down1/down2/down3，阈值 +10/+5/+1/±1/-5/-10%），
-  通过 `handle.setPriceState(state)` 驱动股票皮肤的 `quote` 行为层切片段。
+  通过 `handle.setPriceState(state)` 驱动皮肤的 `quote` 行为层切片段。
 
 ## 5. 皮肤库按类别/代码（scope）
 
@@ -57,7 +57,10 @@
 - `kinds:['cashflow']` 等 = 该类别专属。
 - `symbols:['AAPL']` = 投资专属代码皮肤，仅该代码可选。
 
-SkinPicker 按当前资产（类别 + 代码）过滤。5 个示例股票皮肤（`public/skins/stock-<sym>/`）scope 到各自代码，是**占位像素**（logo + 7 档涨跌箭头）；真 AI 美术用图片 API 生成后替换 PNG 即可。
+每类都有**默认皮肤（都带动画）**：现金流→果园/麦田场，存款→银行，房产→别墅，投资→办公室/工厂。
+SkinPicker 按当前资产（类别 + 代码）过滤。5 个示例股票皮肤（`public/skins/stock-<sym>/`）= 写字楼 + 闪烁窗 + 楼顶公司招牌（logo），scope 到各自代码；是**占位像素**，真 AI 美术用图片 API 生成后替换 PNG 即可。
+
+> 「建筑」皮肤的程序化美术见 `src/skins/_export/buildings.ts`；改/加皮肤后用 `runExport.ts` 在浏览器里重渲染落盘到 `public/skins/`。
 
 ## 6. 数据迁移
 

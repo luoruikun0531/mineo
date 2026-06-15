@@ -34,12 +34,22 @@ interface Unit {
   lastBand: AssetEvent | null;
   /** 投资：上次价格状态 + 涨跌标签文本（仅变化时切动画/重建标签）。 */
   lastPriceState: PriceState | null;
-  lastPctText: string;
+  lastChangeText: string;
+  /** 投资涨跌标签头顶上下跳动的计时与相位（多资产错峰）。 */
+  bobT: number;
+  bobPhase: number;
 }
 
-/** 当日涨跌幅 → 标签文本（如 "+11.0%"）。 */
+/** 当日涨跌幅 → 标签文本（如 "+1.8%"）。 */
 function pctText(pct: number): string {
   return `${pct >= 0 ? '+' : ''}${(pct * 100).toFixed(1)}%`;
+}
+
+/** 由资产 id 派生稳定相位，让多个投资的涨跌标签跳动错峰。 */
+function bobPhaseOf(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 997;
+  return (h / 997) * Math.PI * 2;
 }
 
 interface FloatText {
@@ -172,7 +182,7 @@ export class BoardController {
           unit.hs = initHarvest(r);
           unit.lastBand = null;
         }
-        if (unit.asset.name !== asset.name) {
+        if (asset.kind !== 'investment' && unit.asset.name !== asset.name) {
           const tile = this.theme?.tileSize ?? 104;
           const lbl = this.makeNameplate(asset.name, tile);
           lbl.position.set(unit.label.x, unit.label.y);
@@ -220,10 +230,10 @@ export class BoardController {
     handle.view.cursor = 'pointer';
     handle.view.on('pointertap', () => this.onUnitTap(asset.id));
 
-    // 投资类：标签显示当日涨跌幅（绿/红）；其余显示资产名
+    // 投资类：标签显示当日涨跌幅（绿涨/红跌，头顶上下跳）；其余显示资产名
     const label =
       asset.kind === 'investment'
-        ? this.makePriceBadge(asset.dayChangePct, tile)
+        ? this.makeChangeLabel(asset.dayChangePct, tile)
         : this.makeNameplate(asset.name, tile);
     label.alpha = 0;
     this.labelLayer.addChild(label);
@@ -241,7 +251,9 @@ export class BoardController {
       hs: initHarvest(this.rateFor(asset)),
       lastBand: null,
       lastPriceState: null,
-      lastPctText: asset.kind === 'investment' ? pctText(asset.dayChangePct) : '',
+      lastChangeText: asset.kind === 'investment' ? pctText(asset.dayChangePct) : '',
+      bobT: 0,
+      bobPhase: bobPhaseOf(asset.id),
     };
   }
 
@@ -301,7 +313,15 @@ export class BoardController {
       v.position.set(unit.x, unit.y);
       if (v.alpha < 1) v.alpha = Math.min(1, v.alpha + dt * FADE_SPEED);
       const tile = this.theme?.tileSize ?? 104;
-      unit.label.position.set(unit.x, unit.y + tile * 0.32);
+      if (unit.asset.kind === 'investment') {
+        // 盈亏标签：头顶上下跳动（跟"爆金币"同款律动，但持续循环）
+        unit.bobT += dt;
+        const ph = unit.bobT * 4 + unit.bobPhase;
+        unit.label.position.set(unit.x, unit.y - tile * 0.4 + Math.sin(ph) * tile * 0.05);
+        unit.label.scale.set(1 + Math.sin(ph) * 0.05);
+      } else {
+        unit.label.position.set(unit.x, unit.y + tile * 0.32);
+      }
       unit.label.alpha = v.alpha;
     }
 
@@ -332,48 +352,42 @@ export class BoardController {
     }
   }
 
-  /** 投资：按当日涨跌设价格状态（驱动股票皮肤 7 档）+ 更新涨跌标签（仅变化时）。 */
+  /** 投资：按当日涨跌设价格状态（驱动皮肤 7 档）+ 更新盈亏金额标签（仅变化时）。 */
   private tickQuote(unit: Unit): void {
     if (unit.asset.kind !== 'investment') return;
-    const pct = unit.asset.dayChangePct;
-    const state = priceStateForChange(pct);
+    const state = priceStateForChange(unit.asset.dayChangePct);
     if (state !== unit.lastPriceState) {
       unit.handle.setPriceState?.(state);
       unit.lastPriceState = state;
     }
-    const text = pctText(pct);
-    if (text !== unit.lastPctText) {
+    const text = pctText(unit.asset.dayChangePct);
+    if (text !== unit.lastChangeText) {
       const tile = this.theme?.tileSize ?? 104;
-      const badge = this.makePriceBadge(pct, tile);
-      badge.position.set(unit.label.x, unit.label.y);
-      badge.alpha = unit.label.alpha;
-      this.labelLayer.addChild(badge);
+      const lbl = this.makeChangeLabel(unit.asset.dayChangePct, tile);
+      lbl.position.set(unit.label.x, unit.label.y);
+      lbl.alpha = unit.label.alpha;
+      this.labelLayer.addChild(lbl);
       unit.label.destroy({ children: true });
-      unit.label = badge;
-      unit.lastPctText = text;
+      unit.label = lbl;
+      unit.lastChangeText = text;
     }
   }
 
-  /** 涨跌标签：绿(涨)/红(跌)/中性 底牌 + 百分比文字。 */
-  private makePriceBadge(pct: number, tile: number): Container {
-    const color = pct > 0.001 ? 0x2e9e4f : pct < -0.001 ? 0xd0402f : 0x6b6256;
+  /** 涨跌标签：当日涨跌百分比，描边像素数字（绿涨/红跌），跟"爆金币"同款质感、头顶上下跳。 */
+  private makeChangeLabel(pct: number, tile: number): Container {
+    const color = pct > 0.0001 ? 0x37c46a : pct < -0.0001 ? 0xf2543d : 0xd8c9aa;
     const style: TextStyleOptions = {
       fontFamily: "'Press Start 2P', ui-monospace, monospace",
-      fontSize: Math.max(8, Math.round(tile * 0.1)),
-      fill: 0xffffff,
+      fontSize: Math.max(9, Math.round(tile * 0.13)),
+      fontWeight: '700',
+      fill: color,
+      stroke: { color: 0x231708, width: Math.max(3, tile * 0.024) },
       align: 'center',
     };
     const t = new Text({ text: pctText(pct), style });
     t.anchor.set(0.5);
-    const padX = Math.round(tile * 0.08);
-    const padY = Math.round(tile * 0.05);
-    const bw = t.width + padX * 2;
-    const bh = t.height + padY * 2;
-    const bg = new Graphics();
-    bg.roundRect(-bw / 2, -bh / 2, bw, bh, Math.max(2, Math.round(tile * 0.03)))
-      .fill({ color, alpha: 0.92 });
     const c = new Container();
-    c.addChild(bg, t);
+    c.addChild(t);
     return c;
   }
 

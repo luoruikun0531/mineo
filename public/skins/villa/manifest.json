@@ -1,0 +1,140 @@
+{
+  "format": "mineo-skin@1",
+  "kind": "asset",
+  "id": "villa",
+  "name": {
+    "en": "Villa",
+    "zh": "别墅"
+  },
+  "version": "1.0.0",
+  "artGrid": 46,
+  "pixelated": true,
+  "layers": [
+    {
+      "id": "lawn",
+      "behavior": "static",
+      "frames": [
+        "lawn"
+      ],
+      "pos": [
+        0,
+        -1
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "tree",
+      "behavior": "plant",
+      "frames": [
+        "tree_0",
+        "tree_1"
+      ],
+      "pos": [
+        -15,
+        7
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "fps": 1.4,
+      "motion": "sway",
+      "popOnHarvest": false
+    },
+    {
+      "id": "house",
+      "behavior": "static",
+      "frames": [
+        "house"
+      ],
+      "pos": [
+        3,
+        9
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "motion": "breathe",
+      "popOnHarvest": false
+    },
+    {
+      "id": "smoke",
+      "behavior": "static",
+      "frames": [
+        "smoke_0",
+        "smoke_1",
+        "smoke_2"
+      ],
+      "pos": [
+        13,
+        -14
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "fps": 3,
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "pool",
+      "behavior": "static",
+      "frames": [
+        "pool_0",
+        "pool_1"
+      ],
+      "pos": [
+        -11,
+        13
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "fps": 2,
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "gardener",
+      "behavior": "worker",
+      "clips": {
+        "idle": [
+          "gardener_idle_0",
+          "gardener_idle_1",
+          "gardener_idle_2",
+          "gardener_idle_3"
+        ],
+        "harvest": [
+          "gardener_harvest_0",
+          "gardener_harvest_1"
+        ]
+      },
+      "pos": [
+        14,
+        14
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "fps": 4,
+      "motion": "none",
+      "popOnHarvest": false
+    }
+  ],
+  "progressBar": {
+    "pos": [
+      0,
+      -0.46
+    ],
+    "width": 0.55
+  }
+}

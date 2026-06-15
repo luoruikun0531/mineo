@@ -7,9 +7,63 @@
     "zh": "英伟达"
   },
   "version": "1.0.0",
-  "artGrid": 30,
+  "artGrid": 46,
   "pixelated": true,
   "layers": [
+    {
+      "id": "pavement",
+      "behavior": "static",
+      "frames": [
+        "pavement"
+      ],
+      "pos": [
+        0,
+        1
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "tower",
+      "behavior": "static",
+      "frames": [
+        "tower"
+      ],
+      "pos": [
+        0,
+        7
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "windows",
+      "behavior": "static",
+      "frames": [
+        "win_0",
+        "win_1",
+        "win_2"
+      ],
+      "pos": [
+        0,
+        7
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "fps": 1.4,
+      "motion": "none",
+      "popOnHarvest": false
+    },
     {
       "id": "logo",
       "behavior": "static",
@@ -18,13 +72,13 @@
       ],
       "pos": [
         0,
-        5
+        -18
       ],
       "anchor": [
         0.5,
-        0.5
+        1
       ],
-      "motion": "none",
+      "motion": "bob",
       "popOnHarvest": false
     },
     {
@@ -55,7 +109,7 @@
       },
       "pos": [
         0,
-        -10
+        -28
       ],
       "anchor": [
         0.5,

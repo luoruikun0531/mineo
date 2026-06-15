@@ -1,0 +1,146 @@
+{
+  "format": "mineo-skin@1",
+  "kind": "asset",
+  "id": "factory",
+  "name": {
+    "en": "Factory",
+    "zh": "工厂"
+  },
+  "version": "1.0.0",
+  "artGrid": 46,
+  "pixelated": true,
+  "layers": [
+    {
+      "id": "pavement",
+      "behavior": "static",
+      "frames": [
+        "pavement"
+      ],
+      "pos": [
+        0,
+        1
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "factory",
+      "behavior": "static",
+      "frames": [
+        "factory"
+      ],
+      "pos": [
+        0,
+        7
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "smokeL",
+      "behavior": "static",
+      "frames": [
+        "smoke_0",
+        "smoke_1",
+        "smoke_2"
+      ],
+      "pos": [
+        -13,
+        -18
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "fps": 3,
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "smokeR",
+      "behavior": "static",
+      "frames": [
+        "smoke_0",
+        "smoke_1",
+        "smoke_2"
+      ],
+      "pos": [
+        11,
+        -22
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "fps": 3,
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "gear",
+      "behavior": "static",
+      "frames": [
+        "gear_0",
+        "gear_1",
+        "gear_2",
+        "gear_3"
+      ],
+      "pos": [
+        -3,
+        -4
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "fps": 5,
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "arrow",
+      "behavior": "quote",
+      "clips": {
+        "up3": [
+          "up3"
+        ],
+        "up2": [
+          "up2"
+        ],
+        "up1": [
+          "up1"
+        ],
+        "plain": [
+          "plain"
+        ],
+        "down1": [
+          "down1"
+        ],
+        "down2": [
+          "down2"
+        ],
+        "down3": [
+          "down3"
+        ]
+      },
+      "pos": [
+        0,
+        -25
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    }
+  ]
+}

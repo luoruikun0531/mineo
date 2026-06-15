@@ -1,6 +1,6 @@
-import type { Texture } from 'pixi.js';
 import { exportOrchard, exportTheme, exportWheat } from './exportProcedural';
-import { stockTextures, type StockCompany } from './stockArt';
+import { exportBank, exportVilla, exportOffice, exportFactory, exportStock } from './buildings';
+import type { StockCompany } from './stockArt';
 import {
   parseAssetManifest,
   parseThemeManifest,
@@ -8,6 +8,12 @@ import {
   type ThemeManifest,
 } from '../format/manifest';
 import type { LandPalette, SkyPalette } from '../kit';
+
+/** 投资类 7 档涨跌箭头的 quote clips（办公室/工厂/股票共用）。 */
+const QUOTE_CLIPS: Record<string, string[]> = {
+  up3: ['up3'], up2: ['up2'], up1: ['up1'], plain: ['plain'],
+  down1: ['down1'], down2: ['down2'], down3: ['down3'],
+};
 
 /**
  * 把老的程序化皮肤定义成图片皮肤包（manifest + 导出的 PNG）。
@@ -80,9 +86,90 @@ export function wheatPackage(): BuiltPackage {
   return { id: 'wheat-farm', manifest, images };
 }
 
+/** 银行（存款）：门面 breathe + 旋转金币 + 闪烁招牌 + 柜员（worker）+ 进度条。 */
+export function bankPackage(): BuiltPackage {
+  const images = exportBank();
+  const byPrefix = (p: string) => Object.keys(images).filter((k) => k.startsWith(p)).sort();
+  const manifest = parseAssetManifest({
+    format: 'mineo-skin@1', kind: 'asset', id: 'bank',
+    name: { en: 'Bank', zh: '银行' }, version: '1.0.0', artGrid: 46, pixelated: true,
+    layers: [
+      { id: 'plaza', behavior: 'static', frames: ['plaza'], pos: [0, -1], anchor: [0.5, 0.5] },
+      { id: 'building', behavior: 'static', frames: ['building'], pos: [0, 9], anchor: [0.5, 1], motion: 'breathe' },
+      { id: 'sign', behavior: 'static', frames: byPrefix('sign_'), fps: 1.5, pos: [-15, -2], anchor: [0.5, 1] },
+      { id: 'coin', behavior: 'static', frames: byPrefix('coin_'), fps: 6, pos: [15, -7], anchor: [0.5, 0.5], motion: 'bob' },
+      { id: 'clerk', behavior: 'worker', clips: { idle: byPrefix('clerk_idle_'), harvest: byPrefix('clerk_harvest_') }, pos: [13, 13], anchor: [0.5, 1], fps: 4 },
+    ],
+    progressBar: { pos: [0, -0.46], width: 0.55 },
+  });
+  return { id: 'bank', manifest, images };
+}
+
+/** 别墅（房产）：屋宇 breathe + 摇摆树 + 烟囱烟 + 泳池波光 + 园丁（worker）+ 进度条。 */
+export function villaPackage(): BuiltPackage {
+  const images = exportVilla();
+  const byPrefix = (p: string) => Object.keys(images).filter((k) => k.startsWith(p)).sort();
+  const manifest = parseAssetManifest({
+    format: 'mineo-skin@1', kind: 'asset', id: 'villa',
+    name: { en: 'Villa', zh: '别墅' }, version: '1.0.0', artGrid: 46, pixelated: true,
+    layers: [
+      { id: 'lawn', behavior: 'static', frames: ['lawn'], pos: [0, -1], anchor: [0.5, 0.5] },
+      { id: 'tree', behavior: 'plant', frames: byPrefix('tree_'), pos: [-15, 7], anchor: [0.5, 1], fps: 1.4, motion: 'sway' },
+      { id: 'house', behavior: 'static', frames: ['house'], pos: [3, 9], anchor: [0.5, 1], motion: 'breathe' },
+      { id: 'smoke', behavior: 'static', frames: byPrefix('smoke_'), fps: 3, pos: [13, -14], anchor: [0.5, 1] },
+      { id: 'pool', behavior: 'static', frames: byPrefix('pool_'), fps: 2, pos: [-11, 13], anchor: [0.5, 0.5] },
+      { id: 'gardener', behavior: 'worker', clips: { idle: byPrefix('gardener_idle_'), harvest: byPrefix('gardener_harvest_') }, pos: [14, 14], anchor: [0.5, 1], fps: 4 },
+    ],
+    progressBar: { pos: [0, -0.46], width: 0.55 },
+  });
+  return { id: 'villa', manifest, images };
+}
+
+/** 办公室（投资默认）：写字楼 + 闪烁窗 + 楼顶信标 + 7 档涨跌箭头（无进度条）。 */
+export function officePackage(): BuiltPackage {
+  const images = exportOffice();
+  const byPrefix = (p: string) => Object.keys(images).filter((k) => k.startsWith(p)).sort();
+  const manifest = parseAssetManifest({
+    format: 'mineo-skin@1', kind: 'asset', id: 'office',
+    name: { en: 'Office', zh: '办公室' }, version: '1.0.0', artGrid: 46, pixelated: true,
+    layers: [
+      { id: 'pavement', behavior: 'static', frames: ['pavement'], pos: [0, 1], anchor: [0.5, 0.5] },
+      { id: 'tower', behavior: 'static', frames: ['tower'], pos: [0, 7], anchor: [0.5, 1] },
+      { id: 'windows', behavior: 'static', frames: byPrefix('win_'), fps: 1.4, pos: [0, 7], anchor: [0.5, 1] },
+      { id: 'antenna', behavior: 'static', frames: byPrefix('ant_'), fps: 1.5, pos: [0, -18], anchor: [0.5, 1], motion: 'bob' },
+      { id: 'arrow', behavior: 'quote', clips: QUOTE_CLIPS, pos: [0, -27], anchor: [0.5, 0.5] },
+    ],
+  });
+  return { id: 'office', manifest, images };
+}
+
+/** 工厂（投资默认）：厂房 + 旋转齿轮 + 双烟囱冒烟 + 7 档涨跌箭头（无进度条）。 */
+export function factoryPackage(): BuiltPackage {
+  const images = exportFactory();
+  const byPrefix = (p: string) => Object.keys(images).filter((k) => k.startsWith(p)).sort();
+  const manifest = parseAssetManifest({
+    format: 'mineo-skin@1', kind: 'asset', id: 'factory',
+    name: { en: 'Factory', zh: '工厂' }, version: '1.0.0', artGrid: 46, pixelated: true,
+    layers: [
+      { id: 'pavement', behavior: 'static', frames: ['pavement'], pos: [0, 1], anchor: [0.5, 0.5] },
+      { id: 'factory', behavior: 'static', frames: ['factory'], pos: [0, 7], anchor: [0.5, 1] },
+      { id: 'smokeL', behavior: 'static', frames: byPrefix('smoke_'), fps: 3, pos: [-13, -18], anchor: [0.5, 1] },
+      { id: 'smokeR', behavior: 'static', frames: byPrefix('smoke_'), fps: 3, pos: [11, -22], anchor: [0.5, 1] },
+      { id: 'gear', behavior: 'static', frames: byPrefix('gear_'), fps: 5, pos: [-3, -4], anchor: [0.5, 0.5] },
+      { id: 'arrow', behavior: 'quote', clips: QUOTE_CLIPS, pos: [0, -25], anchor: [0.5, 0.5] },
+    ],
+  });
+  return { id: 'factory', manifest, images };
+}
+
 /** 所有待落盘的老资产皮肤包（主题由 allBuiltThemePackages 单独处理）。 */
 export function allBuiltPackages(): BuiltPackage[] {
   return [orchardPackage(), wheatPackage()];
+}
+
+/** 新增「建筑」皮肤包：银行/别墅/办公室/工厂（按类别 scope）。 */
+export function allBuildingPackages(): BuiltPackage[] {
+  return [bankPackage(), villaPackage(), officePackage(), factoryPackage()];
 }
 
 // ---- 主题（土地 + 天空）皮肤包 ----
@@ -152,37 +239,24 @@ export function allBuiltThemePackages(): BuiltThemePackage[] {
 
 // ---- 股票占位皮肤（投资类，quote 7 档涨跌动画，scope 到各自代码）----
 
-function texToPng(tex: Texture): string {
-  return (tex.source.resource as HTMLCanvasElement).toDataURL('image/png');
-}
-
 export interface BuiltStockPackage {
   symbol: string;
   pkg: BuiltPackage;
 }
 
+/** 写字楼 + 闪烁窗 + 楼顶公司招牌（bob）+ 7 档涨跌箭头。代码专属皮肤范例。 */
 function stockPackage(symbol: string, company: StockCompany, name: { en: string; zh: string }): BuiltPackage {
-  const tex = stockTextures(company);
-  const images: Record<string, string> = {};
-  for (const [k, t] of Object.entries(tex)) images[k] = texToPng(t);
-
+  const images = exportStock(company);
+  const byPrefix = (p: string) => Object.keys(images).filter((k) => k.startsWith(p)).sort();
   const manifest = parseAssetManifest({
-    format: 'mineo-skin@1',
-    kind: 'asset',
-    id: `stock-${symbol.toLowerCase()}`,
-    name,
-    version: '1.0.0',
-    artGrid: 30,
-    pixelated: true,
+    format: 'mineo-skin@1', kind: 'asset', id: `stock-${symbol.toLowerCase()}`,
+    name, version: '1.0.0', artGrid: 46, pixelated: true,
     layers: [
-      { id: 'logo', behavior: 'static', frames: ['logo'], pos: [0, 5], anchor: [0.5, 0.5] },
-      {
-        id: 'arrow',
-        behavior: 'quote',
-        clips: { up3: ['up3'], up2: ['up2'], up1: ['up1'], plain: ['plain'], down1: ['down1'], down2: ['down2'], down3: ['down3'] },
-        pos: [0, -10],
-        anchor: [0.5, 0.5],
-      },
+      { id: 'pavement', behavior: 'static', frames: ['pavement'], pos: [0, 1], anchor: [0.5, 0.5] },
+      { id: 'tower', behavior: 'static', frames: ['tower'], pos: [0, 7], anchor: [0.5, 1] },
+      { id: 'windows', behavior: 'static', frames: byPrefix('win_'), fps: 1.4, pos: [0, 7], anchor: [0.5, 1] },
+      { id: 'logo', behavior: 'static', frames: ['logo'], pos: [0, -18], anchor: [0.5, 1], motion: 'bob' },
+      { id: 'arrow', behavior: 'quote', clips: QUOTE_CLIPS, pos: [0, -28], anchor: [0.5, 0.5] },
     ],
   });
   return { id: `stock-${symbol.toLowerCase()}`, manifest, images };

@@ -70,7 +70,9 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
   );
   // investment
   const [symbol, setSymbol] = useState(editing?.kind === 'investment' ? editing.symbol : '');
-  const [shares, setShares] = useState(editing?.kind === 'investment' ? String(editing.shares) : '');
+  const [shares, setShares] = useState(
+    editing?.kind === 'investment' ? groupDigits(String(editing.shares)) : '',
+  );
   const [amount, setAmount] = useState('');
   const [byAmount, setByAmount] = useState(false);
   const [price, setPrice] = useState(editing?.kind === 'investment' ? editing.latestPrice : 0);
@@ -109,7 +111,7 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
     }
     const input: AssetInput = {
       kind,
-      name,
+      name: kind === 'investment' ? symbol : name,
       iconId,
       annualIncome: kind === 'cashflow' ? num(income) : undefined,
       principal: kind === 'deposit' ? num(principal) : undefined,
@@ -126,7 +128,7 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
       const msg = res.error.issues[0]?.message;
       setErr(
         msg === 'name' || msg === 'nameLong'
-          ? t('err.name')
+          ? t(kind === 'investment' ? 'err.symbol' : 'err.name')
           : msg === 'rate'
             ? t('err.rate')
             : msg === 'icon'
@@ -187,15 +189,17 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
         <p className="hint">{t(`asset.${kind}Hint`)}</p>
       </div>
 
-      <div className="field">
-        <label>{t('asset.name')}</label>
-        <input
-          value={name}
-          maxLength={24}
-          placeholder={t('asset.namePlaceholder')}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </div>
+      {kind !== 'investment' && (
+        <div className="field">
+          <label>{t('asset.name')}</label>
+          <input
+            value={name}
+            maxLength={24}
+            placeholder={t('asset.namePlaceholder')}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+      )}
 
       <div className="field">
         <label>{t('asset.skin')}</label>
@@ -262,7 +266,11 @@ export function AssetModal({ editing, onClose }: AssetModalProps) {
           {byAmount ? (
             <NumField label={`${t('asset.amount')} (${sym})`} value={amount} onChange={(v) => setAmount(groupDigits(v))} />
           ) : (
-            <NumField label={t('asset.shares')} value={shares} onChange={setShares} />
+            <NumField
+              label={`${t('asset.shares')} (${t('asset.sharesUnit')})`}
+              value={shares}
+              onChange={(v) => setShares(groupDigits(v))}
+            />
           )}
         </>
       )}

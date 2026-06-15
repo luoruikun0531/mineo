@@ -1,0 +1,122 @@
+{
+  "format": "mineo-skin@1",
+  "kind": "asset",
+  "id": "bank",
+  "name": {
+    "en": "Bank",
+    "zh": "银行"
+  },
+  "version": "1.0.0",
+  "artGrid": 46,
+  "pixelated": true,
+  "layers": [
+    {
+      "id": "plaza",
+      "behavior": "static",
+      "frames": [
+        "plaza"
+      ],
+      "pos": [
+        0,
+        -1
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "building",
+      "behavior": "static",
+      "frames": [
+        "building"
+      ],
+      "pos": [
+        0,
+        9
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "motion": "breathe",
+      "popOnHarvest": false
+    },
+    {
+      "id": "sign",
+      "behavior": "static",
+      "frames": [
+        "sign_0",
+        "sign_1"
+      ],
+      "pos": [
+        -15,
+        -2
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "fps": 1.5,
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "coin",
+      "behavior": "static",
+      "frames": [
+        "coin_0",
+        "coin_1",
+        "coin_2",
+        "coin_3"
+      ],
+      "pos": [
+        15,
+        -7
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "fps": 6,
+      "motion": "bob",
+      "popOnHarvest": false
+    },
+    {
+      "id": "clerk",
+      "behavior": "worker",
+      "clips": {
+        "idle": [
+          "clerk_idle_0",
+          "clerk_idle_1",
+          "clerk_idle_2",
+          "clerk_idle_3"
+        ],
+        "harvest": [
+          "clerk_harvest_0",
+          "clerk_harvest_1"
+        ]
+      },
+      "pos": [
+        13,
+        13
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "fps": 4,
+      "motion": "none",
+      "popOnHarvest": false
+    }
+  ],
+  "progressBar": {
+    "pos": [
+      0,
+      -0.46
+    ],
+    "width": 0.55
+  }
+}

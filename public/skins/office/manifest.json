@@ -1,0 +1,124 @@
+{
+  "format": "mineo-skin@1",
+  "kind": "asset",
+  "id": "office",
+  "name": {
+    "en": "Office",
+    "zh": "办公室"
+  },
+  "version": "1.0.0",
+  "artGrid": 46,
+  "pixelated": true,
+  "layers": [
+    {
+      "id": "pavement",
+      "behavior": "static",
+      "frames": [
+        "pavement"
+      ],
+      "pos": [
+        0,
+        1
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "tower",
+      "behavior": "static",
+      "frames": [
+        "tower"
+      ],
+      "pos": [
+        0,
+        7
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "windows",
+      "behavior": "static",
+      "frames": [
+        "win_0",
+        "win_1",
+        "win_2"
+      ],
+      "pos": [
+        0,
+        7
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "fps": 1.4,
+      "motion": "none",
+      "popOnHarvest": false
+    },
+    {
+      "id": "antenna",
+      "behavior": "static",
+      "frames": [
+        "ant_0",
+        "ant_1"
+      ],
+      "pos": [
+        0,
+        -18
+      ],
+      "anchor": [
+        0.5,
+        1
+      ],
+      "fps": 1.5,
+      "motion": "bob",
+      "popOnHarvest": false
+    },
+    {
+      "id": "arrow",
+      "behavior": "quote",
+      "clips": {
+        "up3": [
+          "up3"
+        ],
+        "up2": [
+          "up2"
+        ],
+        "up1": [
+          "up1"
+        ],
+        "plain": [
+          "plain"
+        ],
+        "down1": [
+          "down1"
+        ],
+        "down2": [
+          "down2"
+        ],
+        "down3": [
+          "down3"
+        ]
+      },
+      "pos": [
+        0,
+        -27
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "motion": "none",
+      "popOnHarvest": false
+    }
+  ]
+}
