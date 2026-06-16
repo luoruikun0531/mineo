@@ -5,7 +5,7 @@ import {
   themeFrameNames,
 } from '../format/manifest';
 import type { AssetKind, Language } from '@/domain/types';
-import { putPackage, type StoredPackage } from './db';
+import { deletePackage, putPackage, type StoredPackage } from './db';
 
 /**
  * 皮肤适用范围：决定该皮肤在哪些资产的「外观」选择里出现。
@@ -110,12 +110,27 @@ export async function syncWithRegistry(
   registry: Registry,
   stored: StoredPackage[],
 ): Promise<string[]> {
+  const registryById = new Map(registry.skins.map((s) => [s.id, s]));
   const installedVersion = new Map(stored.map((p) => [p.id, p.version]));
-  const ids = new Set<string>([...registry.defaults, ...installedVersion.keys()]);
   const changed: string[] = [];
+
+  // 1. 清掉 registry 已下线的本地包（如移除的旧主题）→ 让 app 回退到可用皮肤，不再显示旧的。
+  for (const p of stored) {
+    if (!registryById.has(p.id)) {
+      try {
+        await deletePackage(p.id);
+        changed.push(p.id);
+      } catch {
+        /* 忽略 */
+      }
+    }
+  }
+
+  // 2. 补齐缺失的默认皮肤 + 升级版本变化的已装皮肤。
+  const ids = new Set<string>([...registry.defaults, ...installedVersion.keys()]);
   for (const id of ids) {
-    const entry = registry.skins.find((s) => s.id === id);
-    if (!entry) continue;
+    const entry = registryById.get(id);
+    if (!entry) continue; // 不在 registry（上一步已删）
     if (installedVersion.get(id) === entry.version) continue; // 已是最新
     try {
       await installPackage(entry); // 缺装 / 升级（putPackage 覆盖）
