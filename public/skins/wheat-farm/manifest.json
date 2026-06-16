@@ -2,189 +2,82 @@
   "format": "mineo-skin@1",
   "kind": "asset",
   "id": "wheat-farm",
-  "name": {
-    "en": "Wheat Farm",
-    "zh": "麦田场"
-  },
-  "version": "1.0.0",
+  "name": { "en": "Wheat Farm", "zh": "麦田场" },
+  "version": "2.0.0",
   "artGrid": 46,
-  "pixelated": true,
+  "pixelated": false,
   "layers": [
     {
-      "id": "ground",
+      "id": "grass",
       "behavior": "static",
-      "frames": [
-        "ground"
-      ],
-      "pos": [
-        0,
-        -1
-      ],
-      "anchor": [
-        0.5,
-        0.5
-      ],
-      "motion": "none",
-      "popOnHarvest": false
+      "frames": ["grass"],
+      "pos": [0, 8],
+      "anchor": [0.5, 0.5],
+      "size": 52
     },
     {
-      "id": "wheat0",
+      "id": "wheatL",
       "behavior": "plant",
-      "frames": [
-        "wheat_0",
-        "wheat_1"
-      ],
-      "pos": [
-        -13,
-        0
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 2,
-      "motion": "none",
+      "frames": ["wheat"],
+      "pos": [-16, 7],
+      "anchor": [0.5, 1],
+      "size": 22,
+      "motion": "sway",
       "popOnHarvest": true
     },
     {
-      "id": "wheat1",
+      "id": "wheatC",
       "behavior": "plant",
-      "frames": [
-        "wheat_0",
-        "wheat_1"
-      ],
-      "pos": [
-        -6,
-        0
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 2.4,
-      "motion": "none",
+      "frames": ["wheat"],
+      "pos": [-2, 2],
+      "anchor": [0.5, 1],
+      "size": 24,
+      "motion": "sway",
       "popOnHarvest": true
     },
     {
-      "id": "wheat2",
+      "id": "wheatR",
       "behavior": "plant",
-      "frames": [
-        "wheat_0",
-        "wheat_1"
-      ],
-      "pos": [
-        1,
-        0
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 2.8,
-      "motion": "none",
+      "frames": ["wheat"],
+      "pos": [16, 6],
+      "anchor": [0.5, 1],
+      "size": 22,
+      "motion": "sway",
       "popOnHarvest": true
     },
     {
-      "id": "wheat3",
-      "behavior": "plant",
-      "frames": [
-        "wheat_0",
-        "wheat_1"
-      ],
-      "pos": [
-        8,
-        0
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 3.2,
-      "motion": "none",
-      "popOnHarvest": true
+      "id": "worker1",
+      "behavior": "staged",
+      "clips": { "s1": ["work"], "s2": ["work"], "s3": ["work"] },
+      "pos": [-13, 16],
+      "anchor": [0.5, 1],
+      "size": 25
     },
     {
-      "id": "hoe",
-      "behavior": "worker",
-      "clips": {
-        "idle": [
-          "hoe_idle_0",
-          "hoe_idle_1",
-          "hoe_idle_2",
-          "hoe_idle_3"
-        ],
-        "harvest": [
-          "hoe_harvest_0",
-          "hoe_harvest_1"
-        ]
-      },
-      "pos": [
-        -10,
-        12
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 4,
-      "motion": "none",
-      "popOnHarvest": false
+      "id": "worker2",
+      "behavior": "staged",
+      "clips": { "s1": ["daydream"], "s2": ["work"], "s3": ["work"] },
+      "pos": [1, 18],
+      "anchor": [0.5, 1],
+      "size": 25
     },
     {
-      "id": "lazy",
-      "behavior": "idler",
-      "clips": {
-        "sit": [
-          "lazy_sit_0",
-          "lazy_sit_1"
-        ],
-        "work": [
-          "lazy_work_0",
-          "lazy_work_1",
-          "lazy_work_2",
-          "lazy_work_3"
-        ],
-        "harvest": [
-          "lazy_harvest_0",
-          "lazy_harvest_1"
-        ]
-      },
-      "pos": [
-        12,
-        13
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 1.5,
-      "motion": "none",
-      "popOnHarvest": false,
-      "workAt": 3
+      "id": "worker3",
+      "behavior": "staged",
+      "clips": { "s1": ["sleep"], "s2": ["daydream"], "s3": ["work"] },
+      "pos": [14, 15],
+      "anchor": [0.5, 1],
+      "size": 25
     },
     {
       "id": "sack",
       "behavior": "static",
-      "frames": [
-        "sack"
-      ],
-      "pos": [
-        18,
-        11
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "motion": "none",
-      "popOnHarvest": false
+      "frames": ["sack"],
+      "pos": [16, 12],
+      "anchor": [0.5, 1],
+      "size": 17,
+      "popOnHarvest": true
     }
   ],
-  "progressBar": {
-    "pos": [
-      0,
-      -0.42
-    ],
-    "width": 0.6
-  }
+  "progressBar": { "pos": [0, -0.46], "width": 0.6 }
 }

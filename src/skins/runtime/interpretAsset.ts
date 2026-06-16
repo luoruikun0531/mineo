@@ -1,6 +1,6 @@
 import { AnimatedSprite, Container, Sprite, Texture } from 'pixi.js';
 import type { AssetEvent, AssetSkin, AssetSkinHandle, PriceState } from '../types';
-import { bob, breathe, harvestPop, killMotion, sway } from '../kit/motion';
+import { bob, breathe, harvestPop, killMotion, patrol, setBaseScale, sway } from '../kit/motion';
 import { makeProgressBar } from '../kit/progressBar';
 import { assetFrameNames, type AssetManifest, type LayerManifest } from '../format/manifest';
 import { loadTexture } from './texture';
@@ -54,11 +54,19 @@ function buildComposite(
   const unit = tileSize / manifest.artGrid;
   const layers: Layer[] = [];
 
+  // size 指定时按「目标尺寸（长边，artGrid 单位）」缩放贴图（AI 高清图）；否则按原生像素 × unit。
+  // 用长边归一：人物各状态（伸手窄、站立宽、坐着矮）裁剪框不同，但长边一致 → 视觉大小统一。
+  const firstTex = (s: Sprite | AnimatedSprite): Texture | undefined =>
+    s instanceof AnimatedSprite ? (s.textures[0] as Texture | undefined) : s.texture;
+  const scaleFor = (mm: LayerManifest, t: Texture | undefined): number =>
+    mm.size ? (mm.size * unit) / Math.max(t?.width || 1, t?.height || 1) : unit;
+
   for (const m of manifest.layers) {
     const sprite = makeSprite(m, textures);
     const [ax, ay] = m.anchor ?? [0.5, 1];
     sprite.anchor.set(ax, ay);
-    sprite.scale.set(unit);
+    sprite.scale.set(scaleFor(m, firstTex(sprite)));
+    setBaseScale(sprite); // 记账基准缩放，供 breathe/harvestPop 相对补间（适配 size 高清图）
     sprite.position.set(m.pos[0] * unit, m.pos[1] * unit);
     view.addChild(sprite);
     applyAmbientMotion(m, sprite);
@@ -95,6 +103,17 @@ function buildComposite(
 
   const applyLevel = () => {
     for (const { m, sprite } of layers) {
+      if (m.behavior === 'staged') {
+        // 分阶段角色：按当前档位 1/2/3 切到 s1/s2/s3（单帧用 texture，多帧用片段）
+        const frames = clipFrames(m, textures, `s${level}`);
+        if (frames.length) {
+          if (sprite instanceof AnimatedSprite) switchClip(sprite, frames, speed(m.fps ?? 4), true);
+          else sprite.texture = frames[0];
+          sprite.scale.set(scaleFor(m, frames[0])); // 各状态裁剪宽度不同，按 size 重新归一
+          setBaseScale(sprite);
+        }
+        continue;
+      }
       if (!(sprite instanceof AnimatedSprite)) continue;
       const base = m.fps ?? 4;
       if (m.behavior === 'worker') {
@@ -201,6 +220,10 @@ function initialFrames(m: LayerManifest, textures: Record<string, Texture>): Tex
     const sit = clipFrames(m, textures, IDLER_SIT);
     if (sit.length) return sit;
   }
+  if (m.behavior === 'staged') {
+    const s1 = clipFrames(m, textures, 's1');
+    if (s1.length) return s1;
+  }
   if (m.behavior === 'quote') {
     const plain = clipFrames(m, textures, 'plain');
     if (plain.length) return plain;
@@ -226,4 +249,5 @@ function applyAmbientMotion(m: LayerManifest, sprite: Sprite | AnimatedSprite): 
   if (m.motion === 'sway') sway(sprite);
   else if (m.motion === 'bob') bob(sprite);
   else if (m.motion === 'breathe') breathe(sprite);
+  else if (m.motion === 'patrol') patrol(sprite);
 }

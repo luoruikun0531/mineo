@@ -20,12 +20,14 @@ const Localized = z.object({ en: z.string(), zh: z.string() });
  *  - worker  工人：循环 idle 片段，工作档位越高播得越快；harvest 播一次 'harvest' 片段再回 idle。
  *  - idler   偷懒者：低档位播 'sit'，到 workAt 档位切 'work'。
  *  - quote   投资：按当日涨跌 7 档切片段（clips 的键用 up3/up2/up1/plain/down1/down2/down3）。
+ *  - staged  分阶段角色：按当前工作档位 1/2/3 切片段（clips 的键用 s1/s2/s3）。
+ *            如一个工人：s1=睡觉、s2=发呆、s3=干活——三档各一张静图，引擎按阶段切。
  */
-export const LayerBehavior = z.enum(['static', 'plant', 'worker', 'idler', 'quote']);
+export const LayerBehavior = z.enum(['static', 'plant', 'worker', 'idler', 'quote', 'staged']);
 export type LayerBehavior = z.infer<typeof LayerBehavior>;
 
-/** 环境动作：叠加在（通常是静态）层上的循环动效。 */
-export const AmbientMotion = z.enum(['none', 'sway', 'bob', 'breathe']);
+/** 环境动作：叠加在（通常是静态）层上的循环动效。patrol=水平来回踱步并翻转朝向（巡逻/扫地）。 */
+export const AmbientMotion = z.enum(['none', 'sway', 'bob', 'breathe', 'patrol']);
 export type AmbientMotion = z.infer<typeof AmbientMotion>;
 
 export const LayerSchema = z.object({
@@ -41,6 +43,10 @@ export const LayerSchema = z.object({
   anchor: tuple2.optional(),
   /** 基础帧率，默认 4。 */
   fps: z.number().positive().optional(),
+  /** AI 高清图用：目标尺寸（长边 = max(宽,高)，artGrid 单位）；按此缩放贴图，而非按其原生像素。
+   *  缺省 = 按原生像素缩放（早期程序化小图）。用长边归一，使同一层各状态（伸手/站立/坐下，
+   *  裁剪框不同）视觉大小一致。 */
+  size: z.number().positive().optional(),
   /** 环境动作（叠加循环动效）。 */
   motion: AmbientMotion.default('none'),
   /** harvest 时是否弹跳（squash & stretch）。 */

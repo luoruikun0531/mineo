@@ -2,214 +2,72 @@
   "format": "mineo-skin@1",
   "kind": "asset",
   "id": "orchard",
-  "name": {
-    "en": "Orchard",
-    "zh": "果园"
-  },
-  "version": "1.0.0",
+  "name": { "en": "Orchard", "zh": "果园" },
+  "version": "2.0.0",
   "artGrid": 46,
-  "pixelated": true,
+  "pixelated": false,
   "layers": [
     {
       "id": "grass",
       "behavior": "static",
-      "frames": [
-        "grass"
-      ],
-      "pos": [
-        0,
-        -1
-      ],
-      "anchor": [
-        0.5,
-        0.5
-      ],
-      "motion": "none",
-      "popOnHarvest": false
+      "frames": ["grass"],
+      "pos": [0, 8],
+      "anchor": [0.5, 0.5],
+      "size": 52
     },
     {
-      "id": "tree0",
+      "id": "treeL",
       "behavior": "plant",
-      "frames": [
-        "tree0_0",
-        "tree0_1"
-      ],
-      "pos": [
-        -13,
-        5
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 1.2,
-      "motion": "none",
+      "frames": ["tree"],
+      "pos": [-15, 3],
+      "anchor": [0.5, 1],
+      "size": 34,
+      "motion": "sway",
       "popOnHarvest": true
     },
     {
-      "id": "tree1",
+      "id": "treeR",
       "behavior": "plant",
-      "frames": [
-        "tree1_0",
-        "tree1_1"
-      ],
-      "pos": [
-        -1,
-        3
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 1.5,
-      "motion": "none",
+      "frames": ["tree"],
+      "pos": [15, 1],
+      "anchor": [0.5, 1],
+      "size": 37,
+      "motion": "sway",
       "popOnHarvest": true
     },
     {
-      "id": "tree2",
-      "behavior": "plant",
-      "frames": [
-        "tree2_0",
-        "tree2_1"
-      ],
-      "pos": [
-        12,
-        5
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 1.8,
-      "motion": "none",
-      "popOnHarvest": true
+      "id": "worker1",
+      "behavior": "staged",
+      "clips": { "s1": ["work"], "s2": ["work"], "s3": ["work"] },
+      "pos": [-11, 16],
+      "anchor": [0.5, 1],
+      "size": 26
     },
     {
-      "id": "picker0",
-      "behavior": "worker",
-      "clips": {
-        "idle": [
-          "picker0_idle_0",
-          "picker0_idle_1",
-          "picker0_idle_2",
-          "picker0_idle_3"
-        ],
-        "harvest": [
-          "picker0_harvest_0",
-          "picker0_harvest_1"
-        ]
-      },
-      "pos": [
-        -9,
-        13
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 4,
-      "motion": "none",
-      "popOnHarvest": false
+      "id": "worker2",
+      "behavior": "staged",
+      "clips": { "s1": ["daydream"], "s2": ["work"], "s3": ["work"] },
+      "pos": [1, 18],
+      "anchor": [0.5, 1],
+      "size": 26
     },
     {
-      "id": "picker1",
-      "behavior": "worker",
-      "clips": {
-        "idle": [
-          "picker1_idle_0",
-          "picker1_idle_1",
-          "picker1_idle_2",
-          "picker1_idle_3"
-        ],
-        "harvest": [
-          "picker1_harvest_0",
-          "picker1_harvest_1"
-        ]
-      },
-      "pos": [
-        4,
-        14
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 4,
-      "motion": "none",
-      "popOnHarvest": false
+      "id": "worker3",
+      "behavior": "staged",
+      "clips": { "s1": ["sleep"], "s2": ["daydream"], "s3": ["work"] },
+      "pos": [12, 15],
+      "anchor": [0.5, 1],
+      "size": 26
     },
     {
-      "id": "lazy",
-      "behavior": "idler",
-      "clips": {
-        "sit": [
-          "lazy_sit_0",
-          "lazy_sit_1"
-        ],
-        "work": [
-          "lazy_work_0",
-          "lazy_work_1",
-          "lazy_work_2",
-          "lazy_work_3"
-        ],
-        "harvest": [
-          "lazy_harvest_0",
-          "lazy_harvest_1"
-        ]
-      },
-      "pos": [
-        15,
-        13
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "fps": 1.5,
-      "motion": "none",
-      "popOnHarvest": false,
-      "workAt": 3
-    },
-    {
-      "id": "crateA",
+      "id": "crate",
       "behavior": "static",
-      "frames": [
-        "crate"
-      ],
-      "pos": [
-        17,
-        12
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "motion": "none",
-      "popOnHarvest": false
-    },
-    {
-      "id": "crateB",
-      "behavior": "static",
-      "frames": [
-        "crate"
-      ],
-      "pos": [
-        17,
-        6
-      ],
-      "anchor": [
-        0.5,
-        1
-      ],
-      "motion": "none",
-      "popOnHarvest": false
+      "frames": ["crate"],
+      "pos": [16, 12],
+      "anchor": [0.5, 1],
+      "size": 16,
+      "popOnHarvest": true
     }
   ],
-  "progressBar": {
-    "pos": [
-      0,
-      -0.44
-    ],
-    "width": 0.6
-  }
+  "progressBar": { "pos": [0, -0.46], "width": 0.6 }
 }

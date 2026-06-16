@@ -1,10 +1,10 @@
 {
   "skins": [
     { "id": "meadow", "kind": "theme", "name": { "en": "Meadow", "zh": "林间空地" }, "version": "1.0.0", "base": "/skins/meadow" },
-    { "id": "orchard", "kind": "asset", "name": { "en": "Orchard", "zh": "果园" }, "version": "1.0.0", "base": "/skins/orchard", "scope": { "kinds": ["cashflow"] } },
-    { "id": "wheat-farm", "kind": "asset", "name": { "en": "Wheat Farm", "zh": "麦田场" }, "version": "1.0.0", "base": "/skins/wheat-farm", "scope": { "kinds": ["cashflow"] } },
-    { "id": "bank", "kind": "asset", "name": { "en": "Bank", "zh": "银行" }, "version": "1.1.0", "base": "/skins/bank", "scope": { "kinds": ["deposit"] } },
-    { "id": "villa", "kind": "asset", "name": { "en": "Villa", "zh": "别墅" }, "version": "1.1.0", "base": "/skins/villa", "scope": { "kinds": ["realestate"] } },
+    { "id": "orchard", "kind": "asset", "name": { "en": "Orchard", "zh": "果园" }, "version": "2.0.0", "base": "/skins/orchard", "scope": { "kinds": ["cashflow"] } },
+    { "id": "wheat-farm", "kind": "asset", "name": { "en": "Wheat Farm", "zh": "麦田场" }, "version": "2.0.0", "base": "/skins/wheat-farm", "scope": { "kinds": ["cashflow"] } },
+    { "id": "bank", "kind": "asset", "name": { "en": "Bank", "zh": "银行" }, "version": "2.0.0", "base": "/skins/bank", "scope": { "kinds": ["deposit"] } },
+    { "id": "villa", "kind": "asset", "name": { "en": "Villa", "zh": "别墅" }, "version": "2.0.0", "base": "/skins/villa", "scope": { "kinds": ["realestate"] } },
     { "id": "office", "kind": "asset", "name": { "en": "Office", "zh": "办公室" }, "version": "1.1.0", "base": "/skins/office", "scope": { "kinds": ["investment"] } },
     { "id": "factory", "kind": "asset", "name": { "en": "Factory", "zh": "工厂" }, "version": "1.1.0", "base": "/skins/factory", "scope": { "kinds": ["investment"] } },
     { "id": "stock-aapl", "kind": "asset", "name": { "en": "Apple", "zh": "苹果" }, "version": "1.2.0", "base": "/skins/stock-aapl", "scope": { "symbols": ["AAPL"] } },
