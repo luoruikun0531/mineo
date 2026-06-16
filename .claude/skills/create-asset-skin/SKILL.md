@@ -13,10 +13,17 @@ Mineo 的资产皮肤 = 一个**会生产 / 会反应的小世界**。皮肤是*
 
 ## 🧭 创作流程（严格按这 6 步，和用户来回确认，别跳步）
 
-### 步骤 1 · 拿到生图 API
-- 先看有没有生图配置（约定放在 gitignored 的本地文件，如根目录 `.imagegen.local.json`；先确认它在 `.gitignore` 里）。
-- **没有就问用户**：生图 API 的 **endpoint、key、调用格式**（请求体字段、返回里图片 URL / base64 在哪个字段）。最好能产出**透明底 PNG**。
-- 记下来（可缓存到上面那个 gitignored 文件，**绝不提交 key**）。本次会话用它来生图。
+### 步骤 1 · 生图 API（已配好 Gemini）
+- 已配置好 **Gemini**：key 在 gitignored 的 `.imagegen.local.json`，模型 `gemini-3.1-flash-image`。（若该文件丢了/换 key，再问用户补 `.imagegen.local.json` 的 `apiKey`。）
+- 用现成工具 `tools/gen_skin_image.py`（生成 → 自动抠品红背景成透明 → 按 alpha 裁剪 → 缩放），一条命令出皮肤可用的透明 PNG：
+  ```
+  python3 tools/gen_skin_image.py \
+    --prompt "<画什么>, 16-bit pixel art game asset, flat colors, centered, pure solid magenta #ff00ff background, no drop shadow" \
+    --out public/skins/<id>/<帧名>.png --max 384
+  ```
+  - 基于参考图编辑：加 `--image ref.png`。只想对已有图重新抠/缩：`--from raw.png`（不调 API、省额度）。
+  - **prompt 必须要求「纯品红 #ff00ff 背景、无阴影」**，否则抠不干净。
+- AI 平滑/写实美术：manifest 里设 `pixelated:false`（别把高清图硬缩成小像素，会糊）。逐帧一致性是 AI 弱项——优先「一张好静图 + motion 配方」，要多帧就同一 prompt 多出几张。
 
 ### 步骤 2 · 问用户要做什么皮肤
 - 是**资产**皮肤还是**地图/土地**皮肤？（地图 → 转 `create-land-skin` 技能。）

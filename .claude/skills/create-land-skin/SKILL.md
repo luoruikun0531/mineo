@@ -13,8 +13,9 @@ description: Interactive, AI-image-driven flow to author a Mineo LAND+UI theme s
 
 ## 🧭 创作流程（严格按这 6 步，和用户来回确认）
 
-### 步骤 1 · 拿到生图 API
-- 同 `create-asset-skin`：有没有生图配置（gitignored 本地文件）；没有就**问用户** endpoint/key/调用格式（产出**透明底 PNG**）。**绝不提交 key**。
+### 步骤 1 · 生图 API（已配好 Gemini）
+- 同 `create-asset-skin`：**Gemini** 已配好（key 在 gitignored `.imagegen.local.json`，模型 `gemini-3.1-flash-image`）。
+- 出图工具：`python3 tools/gen_skin_image.py --prompt "... pure solid magenta #ff00ff background" --out public/skins/<id>/<帧名>.png --max 384`（自动抠图成透明）。土壤要无缝平铺的话 prompt 里写 "seamless tileable"，并 `--no-crop` 保持方形。**绝不提交 key。**
 
 ### 步骤 2 · 问用户要做什么主题
 - 确认是**地图/土地**主题（不是资产 → 转 `create-asset-skin`）。
