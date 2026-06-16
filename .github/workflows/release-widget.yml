@@ -22,9 +22,8 @@ jobs:
           cache: npm
       - run: npm ci
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      # 必须装 rust-toolchain.toml 锁定的 1.88.0（新版 rustc 编 brotli 会挂）
+      - uses: dtolnay/rust-toolchain@1.88.0
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
@@ -45,4 +44,4 @@ jobs:
             3. 打开后输入网页端「💻 下载挂件」弹窗里的配对码即可同步。
           releaseDraft: false
           prerelease: false
-          args: --target universal-apple-darwin
+          # 先出原生 Apple Silicon (arm64) 包，跑通后再升级到 universal（Intel+arm64）
