@@ -273,7 +273,7 @@ button:active.hud-btn,
   width: 100vw;
   display: flex;
   flex-direction: column;
-  background: var(--sky-bottom);
+  background: transparent; /* 透出桌面：挂件不要不透明底（配合透明窗口 + 透明画布） */
   overflow: hidden;
 }
 

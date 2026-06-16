@@ -52,6 +52,8 @@ export function GameCanvas({ onUnitTap, widget = false }: GameCanvasProps) {
       const app = new Application();
       await app.init({
         background: 0xffd28a,
+        // 挂件：透明画布，干净透出桌面（否则不透明底被 CSS opacity 一压就成"砂纸"）
+        backgroundAlpha: widgetRef.current ? 0 : 1,
         resizeTo: host,
         antialias: false,
         roundPixels: true,
@@ -157,8 +159,9 @@ export function GameCanvas({ onUnitTap, widget = false }: GameCanvasProps) {
     if (!ready) return;
     const theme = getTheme(themeId) ?? defaultTheme();
     themeRef.current = theme;
-    if (appRef.current) appRef.current.renderer.background.color = theme.canvasBackground;
-    if (!widget) rebuildBackdropRef.current?.(); // widget 无全屏背景
+    // widget 画布保持透明（不碰背景色/alpha）；full 模式才跟随主题底色
+    if (appRef.current && !widget) appRef.current.renderer.background.color = theme.canvasBackground;
+    if (!widget) rebuildBackdropRef.current?.(); // widget 无全屏背景（画布透明）
   }, [themeId, ready, widget]);
 
   // 资产 / 主题变化 → 重建棋盘 + 设定镜头目标
