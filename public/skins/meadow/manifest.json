@@ -1,0 +1,13 @@
+{
+  "format": "mineo-skin@1",
+  "kind": "theme",
+  "id": "meadow",
+  "name": { "en": "Meadow", "zh": "林间空地" },
+  "version": "1.0.0",
+  "tileSize": 104,
+  "canvasBackground": "#a8def2",
+  "pixelated": false,
+  "land": { "ground": "#7cb05e", "groundShade": "#66984a", "path": "#c2a06b" },
+  "sky": { "skyTop": "#a8def2", "skyBottom": "#d2eef8", "sun": "#fff3c0", "hill": "#7cb05e", "hillDark": "#66984a" },
+  "ui": { "skyTop": "#a8def2", "skyBottom": "#d2eef8", "panel": "#9c6b3f", "panelBorder": "#5e3d22", "highlight": "#fff4d8", "ink": "#3a2a1a", "harvestText": "#ffd24a" }
+}

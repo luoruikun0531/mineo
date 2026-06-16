@@ -1,7 +1,6 @@
 {
   "skins": [
-    { "id": "pastoral-day", "kind": "theme", "name": { "en": "Pastoral · Day", "zh": "田园 · 白昼" }, "version": "1.0.0", "base": "/skins/pastoral-day" },
-    { "id": "pastoral-dusk", "kind": "theme", "name": { "en": "Pastoral · Dusk", "zh": "田园 · 黄昏" }, "version": "1.0.0", "base": "/skins/pastoral-dusk" },
+    { "id": "meadow", "kind": "theme", "name": { "en": "Meadow", "zh": "林间空地" }, "version": "1.0.0", "base": "/skins/meadow" },
     { "id": "orchard", "kind": "asset", "name": { "en": "Orchard", "zh": "果园" }, "version": "1.0.0", "base": "/skins/orchard", "scope": { "kinds": ["cashflow"] } },
     { "id": "wheat-farm", "kind": "asset", "name": { "en": "Wheat Farm", "zh": "麦田场" }, "version": "1.0.0", "base": "/skins/wheat-farm", "scope": { "kinds": ["cashflow"] } },
     { "id": "bank", "kind": "asset", "name": { "en": "Bank", "zh": "银行" }, "version": "1.1.0", "base": "/skins/bank", "scope": { "kinds": ["deposit"] } },
@@ -14,5 +13,5 @@
     { "id": "stock-msft", "kind": "asset", "name": { "en": "Microsoft", "zh": "微软" }, "version": "1.2.0", "base": "/skins/stock-msft", "scope": { "symbols": ["MSFT"] } },
     { "id": "stock-amzn", "kind": "asset", "name": { "en": "Amazon", "zh": "亚马逊" }, "version": "1.2.0", "base": "/skins/stock-amzn", "scope": { "symbols": ["AMZN"] } }
   ],
-  "defaults": ["pastoral-day", "pastoral-dusk", "orchard", "wheat-farm", "bank", "villa", "office", "factory"]
+  "defaults": ["meadow", "orchard", "wheat-farm", "bank", "villa", "office", "factory"]
 }

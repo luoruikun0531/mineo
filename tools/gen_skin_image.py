@@ -23,6 +23,7 @@ Mineo 皮肤生图工具（Gemini + 后处理）。供 create-asset-skin / creat
 小像素，否则糊）；像素风 AI 图可设 true。
 """
 import argparse
+import io
 import json
 import os
 import sys
@@ -67,8 +68,13 @@ def generate(prompt: str, images: list[str]):
     for part in parts:
         if getattr(part, "text", None):
             print("· model:", part.text.strip()[:200])
-        elif getattr(part, "inline_data", None) is not None:
-            return part.as_image()
+        inline = getattr(part, "inline_data", None)
+        if inline is not None and getattr(inline, "data", None) is not None:
+            data = inline.data
+            if isinstance(data, str):  # 某些版本回 base64 字符串
+                import base64
+                data = base64.b64decode(data)
+            return Image.open(io.BytesIO(data))  # -> 真正的 PIL Image
     sys.exit("返回里没有图片（可能被安全策略拦了）。")
 
 

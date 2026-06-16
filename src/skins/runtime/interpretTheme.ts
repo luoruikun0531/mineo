@@ -33,7 +33,12 @@ function hex(s: string): number {
 const MARGIN_X = 78;
 const MARGIN_TOP = 74;
 const MARGIN_BOTTOM = 98;
-const SOIL_PX = 16;
+
+/**
+ * 分辨率归一：把任意尺寸的贴图按「参考逻辑宽度」缩放，使世界尺寸与原布局一致。
+ * AI 高清图（如树 256px）与早期小像素图（树 24px）都渲染成同样大小，不再爆框。
+ */
+const kw = (ref: number, t: Texture | undefined): number => ref / ((t && t.width) || 1);
 
 function buildLand(grid: GridSpec, m: ThemeManifest, tex: Record<string, Texture>): SceneHandle {
   const { tileSize } = grid;
@@ -62,12 +67,11 @@ function buildLand(grid: GridSpec, m: ThemeManifest, tex: Record<string, Texture
   pathG.rect(plotX - 14, plotY - 14, plotW + 28, plotH + 28).fill(path);
   view.addChild(pathG);
 
-  const tileScale = tileSize / SOIL_PX;
   for (let r = 0; r < grid.rows; r++) {
     for (let c = 0; c < grid.cols; c++) {
       const soil = (c + r) % 2 === 0 ? tex.soil_light : tex.soil_dark;
       const s = new Sprite(soil);
-      s.scale.set(tileScale);
+      s.scale.set(tileSize / (soil.width || 1)); // 每块土壤铺满一格
       s.position.set(plotX + c * tileSize, plotY + r * tileSize);
       view.addChild(s);
     }
@@ -77,29 +81,29 @@ function buildLand(grid: GridSpec, m: ThemeManifest, tex: Record<string, Texture
     for (let x = plotX - 12; x <= plotX + plotW + 12; x += tileSize) {
       const post = new Sprite(tex.fence);
       post.anchor.set(0.5, 0);
-      post.scale.set(ds);
+      post.scale.set(ds * kw(6, tex.fence));
       post.position.set(x, edgeY);
       view.addChild(post);
     }
   }
 
-  const addAnim = (frames: Texture[], x: number, y: number, fps: number, s: number) => {
+  const addAnim = (frames: Texture[], x: number, y: number, fps: number, s: number, refW: number) => {
     const a = new AnimatedSprite(frames);
     a.anchor.set(0.5, 1);
-    a.scale.set(s);
+    a.scale.set(s * kw(refW, frames[0]));
     a.animationSpeed = fps / 60;
     a.position.set(x, y);
     a.play();
     view.addChild(a);
   };
-  addAnim([tex.tree_0, tex.tree_1], plotX - 30 * ds, plotY + 40 * ds, 1.2, 1.2 * ds);
-  addAnim([tex.tree_0, tex.tree_1], plotX + plotW + 30 * ds, plotY + 26 * ds, 1.0, ds);
-  addAnim([tex.pond_0, tex.pond_1], plotX - 6 * ds, plotY + plotH + 50 * ds, 2, 1.2 * ds);
+  addAnim([tex.tree_0, tex.tree_1], plotX - 30 * ds, plotY + 40 * ds, 1.2, 1.2 * ds, 24);
+  addAnim([tex.tree_0, tex.tree_1], plotX + plotW + 30 * ds, plotY + 26 * ds, 1.0, ds, 24);
+  addAnim([tex.pond_0, tex.pond_1], plotX - 6 * ds, plotY + plotH + 50 * ds, 2, 1.2 * ds, 30);
 
   const addFlower = (t: Texture, x: number, y: number) => {
     const f = new Sprite(t);
     f.anchor.set(0.5, 1);
-    f.scale.set(ds);
+    f.scale.set(ds * kw(7, t));
     f.position.set(x, y);
     view.addChild(f);
   };
@@ -113,7 +117,7 @@ function buildLand(grid: GridSpec, m: ThemeManifest, tex: Record<string, Texture
     { s: new Sprite(tex.cloud), base: width * 0.82, y: 34, speed: 11, sc: 1.2 * ds },
   ];
   for (const cl of clouds) {
-    cl.s.scale.set(cl.sc);
+    cl.s.scale.set(cl.sc * kw(24, tex.cloud));
     cl.s.y = cl.y;
     view.addChild(cl.s);
   }
@@ -190,7 +194,7 @@ function buildBackdrop(w: number, h: number, m: ThemeManifest, tex: Record<strin
   ].map((c) => {
     const s = new Sprite(tex.sky_cloud);
     s.anchor.set(0.5);
-    s.scale.set(c.sc / 6);
+    s.scale.set((c.sc / 6) * kw(28, tex.sky_cloud));
     s.alpha = 0.95;
     s.y = c.y;
     view.addChild(s);
@@ -203,7 +207,7 @@ function buildBackdrop(w: number, h: number, m: ThemeManifest, tex: Record<strin
   ].map((b) => {
     const s = new Sprite(tex.bird);
     s.anchor.set(0.5);
-    s.scale.set(b.sc / 6);
+    s.scale.set((b.sc / 6) * kw(7, tex.bird));
     s.y = b.y;
     view.addChild(s);
     return { s, ...b };

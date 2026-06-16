@@ -109,9 +109,10 @@ function FullApp() {
   useEnsureSelectionSkins();
 
   useEffect(() => {
-    if (!themeId) {
+    // 没选主题、或存的主题已不在（如旧的 pastoral 被移除）→ 回退到第一个可用主题
+    if (!themeId || !getTheme(themeId)) {
       const first = listThemes()[0];
-      if (first) setThemeId(first.id);
+      if (first && first.id !== themeId) setThemeId(first.id);
     }
   }, [themeId, setThemeId]);
 
