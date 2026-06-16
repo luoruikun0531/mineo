@@ -1,0 +1,48 @@
+name: Build desktop widget
+
+# 推一个版本 tag（如 v0.1.0）即自动构建 macOS 通用 .dmg 并发布到 Releases。
+# 也可在 Actions 页手动触发（Run workflow）。
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 挂件前端打包要带上云同步配置；不配则挂件无法按配对码同步。
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v0.0.0-build{0}', github.run_number) }}
+          releaseName: Mineo 桌面挂件 ${{ github.ref_name }}
+          releaseBody: |
+            macOS 桌面挂件（始终置顶，实时镜像你的农场）。
+            1. 下载 .dmg → 拖进「应用程序」。
+            2. 首次打开：右键 App →「打开」（未签名，绕过 Gatekeeper 一次）。
+            3. 打开后输入网页端「💻 下载挂件」弹窗里的配对码即可同步。
+          releaseDraft: false
+          prerelease: false
+          args: --target universal-apple-darwin
