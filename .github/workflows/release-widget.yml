@@ -38,9 +38,12 @@ jobs:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v0.0.0-build{0}', github.run_number) }}
           releaseName: Mineo 桌面挂件 ${{ github.ref_name }}
           releaseBody: |
-            macOS 桌面挂件（始终置顶，实时镜像你的农场）。
+            macOS 桌面挂件（Apple Silicon · 始终置顶，实时镜像你的农场）。
             1. 下载 .dmg → 拖进「应用程序」。
-            2. 首次打开：右键 App →「打开」（未签名，绕过 Gatekeeper 一次）。
+            2. 首次打开：右键 App →「打开」。
+               若仍提示「已损坏」，在「终端」运行一次：
+               xattr -cr /Applications/Mineo.app
+               再双击打开即可。
             3. 打开后输入网页端「💻 下载挂件」弹窗里的配对码即可同步。
           releaseDraft: false
           prerelease: false
